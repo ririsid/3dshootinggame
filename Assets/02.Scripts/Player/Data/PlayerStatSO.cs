@@ -95,4 +95,12 @@ public class PlayerStatSO : ScriptableObject
 
     [Tooltip("벽에서 떨어질 거리 기준값")]
     public float wallMaxDistance = 1.5f;
+
+    [Header("폭탄 설정")]
+    [Tooltip("최대 폭탄 개수")]
+    [Range(0, 10)]
+    public int maxBombCount = 3;
+
+    [Tooltip("폭탄 던지기 파워")]
+    public float bombThrowPower = 15f;
 }

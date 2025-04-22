@@ -14,6 +14,10 @@ public class UI_PlayerStat : MonoBehaviour
     [SerializeField] private Color _lowColor = Color.red;
     [SerializeField] private float _lowStaminaThreshold = 0.3f; // 스태미너가 30% 이하면 색상 변경
 
+    [Header("폭탄 UI")]
+    [SerializeField] private TextMeshProUGUI _bombCountText;
+    [SerializeField] private Image _bombIcon;
+
     [Header("참조")]
     [SerializeField] private PlayerStat _playerStat;
 
@@ -22,6 +26,7 @@ public class UI_PlayerStat : MonoBehaviour
         if (_playerStat != null)
         {
             _playerStat.OnStaminaChanged += UpdateStaminaUI;
+            _playerStat.OnBombCountChanged += UpdateBombCountUI;
         }
     }
 
@@ -31,6 +36,7 @@ public class UI_PlayerStat : MonoBehaviour
         if (_playerStat != null)
         {
             UpdateStaminaUI(_playerStat.Stamina, _playerStat.MaxStamina);
+            UpdateBombCountUI(_playerStat.CurrentBombCount, _playerStat.MaxBombCount);
         }
     }
 
@@ -39,6 +45,7 @@ public class UI_PlayerStat : MonoBehaviour
         if (_playerStat != null)
         {
             _playerStat.OnStaminaChanged -= UpdateStaminaUI;
+            _playerStat.OnBombCountChanged -= UpdateBombCountUI;
         }
     }
 
@@ -64,6 +71,21 @@ public class UI_PlayerStat : MonoBehaviour
         }
     }
 
+    // 폭탄 개수 UI 업데이트
+    private void UpdateBombCountUI(int currentBombCount, int maxBombCount)
+    {
+        if (_bombCountText != null)
+        {
+            _bombCountText.text = $"{currentBombCount}/{maxBombCount}";
+        }
+
+        // 폭탄 아이콘 표시/숨김 (폭탄이 없을 때 흐리게 표시 등의 효과)
+        if (_bombIcon != null)
+        {
+            _bombIcon.color = currentBombCount > 0 ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.5f);
+        }
+    }
+
     // 참조 설정 메서드
     public void SetupPlayerStat(PlayerStat playerStat)
     {
@@ -71,6 +93,7 @@ public class UI_PlayerStat : MonoBehaviour
         if (_playerStat != null)
         {
             _playerStat.OnStaminaChanged -= UpdateStaminaUI;
+            _playerStat.OnBombCountChanged -= UpdateBombCountUI;
         }
 
         // 새 참조 설정
@@ -80,8 +103,11 @@ public class UI_PlayerStat : MonoBehaviour
         if (_playerStat != null)
         {
             _playerStat.OnStaminaChanged += UpdateStaminaUI;
+            _playerStat.OnBombCountChanged += UpdateBombCountUI;
+
             // 초기 UI 업데이트
             UpdateStaminaUI(_playerStat.Stamina, _playerStat.MaxStamina);
+            UpdateBombCountUI(_playerStat.CurrentBombCount, _playerStat.MaxBombCount);
         }
     }
 }

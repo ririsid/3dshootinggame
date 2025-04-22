@@ -2,16 +2,31 @@ using UnityEngine;
 
 public class PlayerFire : MonoBehaviour
 {
-    // 필요 속성
-    // - 발사 위치
-    public GameObject FirePosition;
-    // - 폭탄 프리팹
-    public GameObject BombPrefab;
-    // - 던지는 힘
-    public float ThrowPower = 15f;
+    #region Fields
+    [Header("발사 설정")]
+    [SerializeField] private GameObject _firePosition;
+    [SerializeField] private ParticleSystem _bulletEffectPrefab;
 
-    // 목표: 마우스의 왼쪽 버튼을 누르면 카메라가 바라보는 방향으로 총을 발사하고 싶다.
-    public ParticleSystem BulletEffectPrefab;
+    [Header("폭탄 설정")]
+    [SerializeField] private GameObject _bombPrefab;
+
+    private PlayerStat _playerStat;
+    #endregion
+
+    #region Properties
+    public int CurrentBombCount => _playerStat.CurrentBombCount;
+    public int MaxBombCount => _playerStat.MaxBombCount;
+    #endregion
+
+    #region Unity Event Functions
+    private void Awake()
+    {
+        _playerStat = GetComponent<PlayerStat>();
+        if (_playerStat == null)
+        {
+            Debug.LogError("PlayerStat 컴포넌트를 찾을 수 없습니다!", this);
+        }
+    }
 
     private void Start()
     {
@@ -20,44 +35,69 @@ public class PlayerFire : MonoBehaviour
 
     private void Update()
     {
-        // 2. 오른쪽 버튼 입력 받기
+        HandleBombThrow();
+        HandleGunFire();
+    }
+    #endregion
+
+    #region Private Methods
+    private void HandleBombThrow()
+    {
+        // 오른쪽 버튼 입력 받기
         if (Input.GetMouseButtonDown(1))
         {
-            // 3. 발사 위치에 수류탄 생성하기
-            GameObject bomb = Instantiate(BombPrefab);
-            bomb.transform.position = FirePosition.transform.position;
+            // PlayerStat을 통해 폭탄 사용 시도
+            if (_playerStat.UseBomb())
+            {
+                // 발사 위치에 수류탄 생성하기
+                GameObject bomb = Instantiate(_bombPrefab);
+                bomb.transform.position = _firePosition.transform.position;
 
-            // 4. 생성된 수류탄을 카메라 방향으로 물리적인 힘 가하기
-            Rigidbody bombRigidbody = bomb.GetComponent<Rigidbody>();
-            bombRigidbody.AddForce(Camera.main.transform.forward * ThrowPower, ForceMode.Impulse);
-            bombRigidbody.AddTorque(Vector3.one);
+                // 생성된 수류탄을 카메라 방향으로 물리적인 힘 가하기
+                Rigidbody bombRigidbody = bomb.GetComponent<Rigidbody>();
+                bombRigidbody.AddForce(Camera.main.transform.forward * _playerStat.BombThrowPower, ForceMode.Impulse);
+                bombRigidbody.AddTorque(Vector3.one);
+
+                Debug.Log($"폭탄 사용: 남은 개수 {_playerStat.CurrentBombCount}/{_playerStat.MaxBombCount}");
+            }
+            else
+            {
+                Debug.Log("폭탄을 모두 사용했습니다!");
+            }
         }
+    }
 
-        // 총알 발사
-        // 1. 왼쪽 버튼 입력 받기
+    private void HandleGunFire()
+    {
+        // 왼쪽 버튼 입력 받기
         if (Input.GetMouseButtonDown(0))
         {
-            // 2. 레이를 생성하고 발사 위치와 진행 방향을 설정
-            Ray ray = new Ray(FirePosition.transform.position, Camera.main.transform.forward);
+            // 레이를 생성하고 발사 위치와 진행 방향을 설정
+            Ray ray = new Ray(_firePosition.transform.position, Camera.main.transform.forward);
 
-            // 3. 레이와 부딛힌 물체의 정보를 저장할 변수를 생성
+            // 레이와 부딛힌 물체의 정보를 저장할 변수를 생성
             RaycastHit hitInfo = new RaycastHit();
 
-            // 4. 레이를 발사한 다음,
+            // 레이를 발사한 다음,
             bool isHit = Physics.Raycast(ray, out hitInfo);
             if (isHit) // 데이터가 있다면(부딛혔다면)
             {
                 // 피격 이펙트 생성(표시)
-                ParticleSystem hitEffect = Instantiate(BulletEffectPrefab);
+                ParticleSystem hitEffect = Instantiate(_bulletEffectPrefab);
                 hitEffect.transform.position = hitInfo.point;
                 hitEffect.transform.forward = hitInfo.normal; // 법선 벡터: 직선에 대하여 수직인 벡터
                 hitEffect.Play();
-
-                // 게임 수학: 선형대수학(스칼라, 벡터, 행렬), 기하학(삼각함수, ...)
             }
         }
-        // Ray: 레이저(시작위치, 방향)
-        // Raycast: 레이저를 발사
-        // RaycastHit: 레이저가 물체와 부딛혔다면 그 정보를 저장하는 구조체
     }
+    #endregion
+
+    #region Public Methods
+    // 폭탄 개수 추가 메서드 (나중에 아이템 획득 시 사용 가능)
+    public void AddBomb(int amount = 1)
+    {
+        _playerStat.AddBomb(amount);
+        Debug.Log($"폭탄 획득: 현재 개수 {_playerStat.CurrentBombCount}/{_playerStat.MaxBombCount}");
+    }
+    #endregion
 }

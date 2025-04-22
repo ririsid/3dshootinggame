@@ -5,11 +5,14 @@ public class PlayerStat : MonoBehaviour
 {
     // 이벤트 정의: 스태미너 변경 시 발생
     public event Action<float, float> OnStaminaChanged; // (현재 스태미너, 최대 스태미너)
+    // 폭탄 관련 이벤트 추가
+    public event Action<int, int> OnBombCountChanged; // (현재 폭탄 개수, 최대 폭탄 개수)
 
     [Header("스탯 데이터")]
     [SerializeField] private PlayerStatSO _playerStatData;
 
     private float _stamina;
+    private int _currentBombCount;
 
     private void Awake()
     {
@@ -22,6 +25,10 @@ public class PlayerStat : MonoBehaviour
         // 초기 스태미너 값 설정 및 이벤트 발생
         _stamina = _playerStatData.maxStamina;
         OnStaminaChanged?.Invoke(_stamina, MaxStamina);
+
+        // 초기 폭탄 개수 설정 및 이벤트 발생
+        _currentBombCount = _playerStatData.maxBombCount;
+        OnBombCountChanged?.Invoke(_currentBombCount, MaxBombCount);
     }
 
     public void RecoverStamina()
@@ -72,8 +79,7 @@ public class PlayerStat : MonoBehaviour
         private set
         {
             float oldValue = _stamina;
-            _stamina = Mathf.Max(0f, value); // 최소 스태미너를 0으로 설정
-            _stamina = Mathf.Min(MaxStamina, value); // 최대 스태미너를 넘지 않도록
+            _stamina = Mathf.Clamp(value, 0f, MaxStamina); // 스태미너를 0과 최대값 사이로 제한
             if (oldValue != _stamina)
             {
                 // 값이 변경되었을 때만 이벤트 발생
@@ -113,6 +119,22 @@ public class PlayerStat : MonoBehaviour
     public float WallInputThreshold => _playerStatData.wallInputThreshold;
     public float WallMaxDistance => _playerStatData.wallMaxDistance;
 
+    // 폭탄 관련 프로퍼티
+    public int CurrentBombCount
+    {
+        get => _currentBombCount;
+        private set
+        {
+            if (_currentBombCount != value)
+            {
+                _currentBombCount = Mathf.Clamp(value, 0, MaxBombCount);
+                OnBombCountChanged?.Invoke(_currentBombCount, MaxBombCount);
+            }
+        }
+    }
+    public int MaxBombCount => _playerStatData.maxBombCount;
+    public float BombThrowPower => _playerStatData.bombThrowPower;
+
     // 필요한 경우 데이터 교체용 메서드
     public void SetPlayerStatData(PlayerStatSO newData)
     {
@@ -122,6 +144,23 @@ public class PlayerStat : MonoBehaviour
             // 스태미너를 새 최대값으로 재설정할 경우
             // Stamina = MaxStamina;
         }
+    }
+    #endregion
+
+    #region 폭탄 관련 메서드
+    public bool UseBomb()
+    {
+        if (CurrentBombCount > 0)
+        {
+            CurrentBombCount--;
+            return true;
+        }
+        return false;
+    }
+
+    public void AddBomb(int amount = 1)
+    {
+        CurrentBombCount += amount;
     }
     #endregion
 }

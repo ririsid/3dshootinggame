@@ -3,9 +3,6 @@ using UnityEngine;
 
 public class PlayerMove : MonoBehaviour
 {
-    [Header("참조")]
-    [SerializeField] private PlayerStat _playerStat; // PlayerStat 참조 추가
-
     #region 이동 관련 변수
     [Header("이동 설정")]
     private float _walkSpeed; // 걷기 속도
@@ -15,6 +12,7 @@ public class PlayerMove : MonoBehaviour
 
     private float _currentMoveSpeed; // 현재 이동 속도
     private bool _isRunning = false; // 달리기 중인지 여부
+    private Vector3 _moveDirection = Vector3.zero; // 이동 방향
     #endregion
 
     #region 점프 관련 변수
@@ -58,11 +56,6 @@ public class PlayerMove : MonoBehaviour
     private Collider _currentWall; // 현재 접촉 중인 벽 콜라이더
     #endregion
 
-    #region 내부 상태 변수
-    private Vector3 _moveDirection = Vector3.zero; // 이동 방향
-    private CharacterController _characterController; // 캐릭터 컨트롤러 컴포넌트
-    #endregion
-
     #region 공용 프로퍼티
     // 외부에서 읽기만 가능한 프로퍼티들
     public float WalkSpeed => _walkSpeed;
@@ -74,14 +67,20 @@ public class PlayerMove : MonoBehaviour
     public bool IsWallClimbing => _isWallClimbing;
     #endregion
 
+    #region 내부 참조
+    private PlayerStat _playerStat; // 플레이어 스탯 참조
+    private CharacterController _characterController; // 캐릭터 컨트롤러 컴포넌트
+    #endregion
+
     private void Awake()
     {
         _characterController = GetComponent<CharacterController>();
 
-        // PlayerStat이 할당되었는지 확인
+        // PlayerStat 컴포넌트 자동 참조
+        _playerStat = GetComponent<PlayerStat>();
         if (_playerStat == null)
         {
-            Debug.LogError("PlayerStat이 할당되지 않았습니다!", this);
+            Debug.LogError("PlayerStat 컴포넌트를 찾을 수 없습니다!", this);
             return;
         }
 
