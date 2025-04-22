@@ -7,10 +7,12 @@ public class PlayerFire : MonoBehaviour
     [Header("발사 설정")]
     [SerializeField] private GameObject _firePosition;
     [SerializeField] private ParticleSystem _bulletEffectPrefab;
+    [SerializeField] private float _bulletEffectDuration = 1.5f; // 총알 이펙트 지속 시간
+    [SerializeField] private int _bulletEffectPoolSize = 10;     // 총알 이펙트 풀 초기 크기
 
     [Header("폭탄 설정")]
     [SerializeField] private GameObject _bombPrefab;
-    [SerializeField] private Transform _bombChargeIndicator;  // 충전 상태를 보여줄 UI 요소
+    [SerializeField] private int _initialPoolSize = 5;       // 폭탄 풀 초기 크기
 
     // 폭탄 충전 이벤트 추가
     public event Action<float, float> OnBombChargeChanged; // (현재 충전량, 최대 충전량)
@@ -19,6 +21,8 @@ public class PlayerFire : MonoBehaviour
     private PlayerStat _playerStat;
     private bool _isChargingBomb = false;
     private float _currentBombCharge = 0f;
+    private bool _isBombPoolInitialized = false;
+    private bool _isBulletEffectPoolInitialized = false;
     #endregion
 
     #region Properties
@@ -35,20 +39,15 @@ public class PlayerFire : MonoBehaviour
         {
             Debug.LogError("PlayerStat 컴포넌트를 찾을 수 없습니다!", this);
         }
-
-        // 충전 인디케이터가 없으면 빈 게임 오브젝트 생성
-        if (_bombChargeIndicator == null)
-        {
-            GameObject indicator = new GameObject("BombChargeIndicator");
-            indicator.transform.SetParent(transform);
-            _bombChargeIndicator = indicator.transform;
-            _bombChargeIndicator.localScale = Vector3.zero;
-        }
     }
 
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+
+        // 오브젝트 풀 초기화
+        InitializeBombPool();
+        InitializeBulletEffectPool();
     }
 
     private void Update()
@@ -59,6 +58,34 @@ public class PlayerFire : MonoBehaviour
     #endregion
 
     #region Private Methods
+    /// <summary>
+    /// 폭탄 오브젝트 풀 초기화
+    /// </summary>
+    private void InitializeBombPool()
+    {
+        if (_bombPrefab != null && !_isBombPoolInitialized)
+        {
+            ObjectPoolManager.Instance.InitializePool(_bombPrefab, _initialPoolSize);
+            _isBombPoolInitialized = true;
+            Debug.Log($"폭탄 오브젝트 풀 초기화 완료 (크기: {_initialPoolSize})");
+        }
+    }
+
+    /// <summary>
+    /// 총알 이펙트 오브젝트 풀 초기화
+    /// </summary>
+    private void InitializeBulletEffectPool()
+    {
+        if (_bulletEffectPrefab != null && !_isBulletEffectPoolInitialized)
+        {
+            // ParticleSystem을 GameObject로 변환하여 풀 초기화
+            GameObject bulletEffectObj = _bulletEffectPrefab.gameObject;
+            ObjectPoolManager.Instance.InitializePool(bulletEffectObj, _bulletEffectPoolSize);
+            _isBulletEffectPoolInitialized = true;
+            Debug.Log($"총알 이펙트 오브젝트 풀 초기화 완료 (크기: {_bulletEffectPoolSize})");
+        }
+    }
+
     private void HandleBombThrow()
     {
         // 오른쪽 버튼을 누르고 있는지 체크
@@ -69,7 +96,6 @@ public class PlayerFire : MonoBehaviour
             // 충전 시작 이벤트 발생
             OnBombChargeStateChanged?.Invoke(true);
             OnBombChargeChanged?.Invoke(_currentBombCharge, _playerStat.BombMaxChargeTime);
-            UpdateBombChargeIndicator();
         }
 
         // 충전 중 파워 증가
@@ -84,7 +110,6 @@ public class PlayerFire : MonoBehaviour
             {
                 OnBombChargeChanged?.Invoke(_currentBombCharge, _playerStat.BombMaxChargeTime);
             }
-            UpdateBombChargeIndicator();
         }
 
         // 오른쪽 버튼을 떼었을 때 폭탄 던지기
@@ -102,33 +127,24 @@ public class PlayerFire : MonoBehaviour
                 float chargePercentage = _currentBombCharge / _playerStat.BombMaxChargeTime;
                 float throwPower = Mathf.Lerp(_playerStat.BombThrowPower, _playerStat.BombThrowMaxPower, chargePercentage);
 
-                // 발사 위치에 수류탄 생성하기
-                GameObject bomb = Instantiate(_bombPrefab);
-                bomb.transform.position = _firePosition.transform.position;
+                // 오브젝트 풀에서 폭탄 가져오기
+                GameObject bomb = ObjectPoolManager.Instance.GetFromPool(_bombPrefab.name);
+                if (bomb != null)
+                {
+                    bomb.transform.position = _firePosition.transform.position;
 
-                // 생성된 수류탄을 카메라 방향으로 물리적인 힘 가하기
-                Rigidbody bombRigidbody = bomb.GetComponent<Rigidbody>();
-                bombRigidbody.AddForce(Camera.main.transform.forward * throwPower, ForceMode.Impulse);
-                bombRigidbody.AddTorque(Vector3.one);
+                    // 생성된 수류탄을 카메라 방향으로 물리적인 힘 가하기
+                    Rigidbody bombRigidbody = bomb.GetComponent<Rigidbody>();
+                    bombRigidbody.AddForce(Camera.main.transform.forward * throwPower, ForceMode.Impulse);
+                    bombRigidbody.AddTorque(Vector3.one);
 
-                Debug.Log($"폭탄 사용: 파워 {throwPower:F1}, 남은 개수 {_playerStat.CurrentBombCount}/{_playerStat.MaxBombCount}");
+                    Debug.Log($"폭탄 사용: 파워 {throwPower:F1}, 남은 개수 {_playerStat.CurrentBombCount}/{_playerStat.MaxBombCount}");
+                }
             }
 
             // 충전 초기화
             _currentBombCharge = 0f;
             OnBombChargeChanged?.Invoke(_currentBombCharge, _playerStat.BombMaxChargeTime);
-
-            // 충전 인디케이터 초기화
-            _bombChargeIndicator.localScale = Vector3.zero;
-        }
-    }
-
-    private void UpdateBombChargeIndicator()
-    {
-        if (_bombChargeIndicator != null)
-        {
-            float chargePercentage = _currentBombCharge / _playerStat.BombMaxChargeTime;
-            _bombChargeIndicator.localScale = new Vector3(chargePercentage, chargePercentage, chargePercentage);
         }
     }
 
@@ -147,12 +163,59 @@ public class PlayerFire : MonoBehaviour
             bool isHit = Physics.Raycast(ray, out hitInfo);
             if (isHit) // 데이터가 있다면(부딛혔다면)
             {
-                // 피격 이펙트 생성(표시)
-                ParticleSystem hitEffect = Instantiate(_bulletEffectPrefab);
-                hitEffect.transform.position = hitInfo.point;
-                hitEffect.transform.forward = hitInfo.normal; // 법선 벡터: 직선에 대하여 수직인 벡터
-                hitEffect.Play();
+                // 피격 이펙트 생성(표시) - 오브젝트 풀링 사용
+                CreateBulletHitEffect(hitInfo.point, hitInfo.normal);
             }
+        }
+    }
+
+    /// <summary>
+    /// 총알 피격 이펙트 생성
+    /// </summary>
+    private void CreateBulletHitEffect(Vector3 position, Vector3 normal)
+    {
+        if (_bulletEffectPrefab != null)
+        {
+            // 오브젝트 풀에서 이펙트 가져오기
+            GameObject effectObj = ObjectPoolManager.Instance.GetFromPool(_bulletEffectPrefab.name);
+
+            if (effectObj == null)
+            {
+                // 풀에서 가져오기 실패 시 직접 생성
+                ParticleSystem hitEffect = Instantiate(_bulletEffectPrefab);
+                hitEffect.transform.position = position;
+                hitEffect.transform.forward = normal;
+                hitEffect.Play();
+                return;
+            }
+
+            // 풀에서 가져온 이펙트 설정
+            effectObj.transform.position = position;
+            effectObj.transform.forward = normal;
+            effectObj.SetActive(true);
+
+            // 파티클 시스템 재생
+            ParticleSystem particleSystem = effectObj.GetComponent<ParticleSystem>();
+            if (particleSystem != null)
+            {
+                particleSystem.Play();
+            }
+
+            // 일정 시간 후 풀로 반환
+            StartCoroutine(ReturnEffectToPool(effectObj, _bulletEffectDuration));
+        }
+    }
+
+    /// <summary>
+    /// 지정된 시간 후 이펙트를 풀에 반환
+    /// </summary>
+    private System.Collections.IEnumerator ReturnEffectToPool(GameObject effect, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (effect != null && effect.activeSelf)
+        {
+            ObjectPoolManager.Instance.ReturnToPool(effect);
         }
     }
     #endregion

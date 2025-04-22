@@ -19,10 +19,7 @@ public class UI_PlayerStat : MonoBehaviour
     [SerializeField] private Image _bombIcon;
 
     [Header("폭탄 충전 UI")]
-    [SerializeField] private Slider _bombChargeSlider;
-    [SerializeField] private GameObject _bombChargeContainer; // 충전 UI를 감싸는 부모 오브젝트
-    [SerializeField] private Image _bombChargeFillImage;
-    [SerializeField] private Color _bombChargeColor = Color.yellow;
+    [SerializeField] private Transform _bombChargeIndicator; // 충전 인디케이터 Transform
 
     [Header("참조")]
     [SerializeField] private PlayerStat _playerStat;
@@ -35,16 +32,10 @@ public class UI_PlayerStat : MonoBehaviour
 
     private void Start()
     {
-        // UI 초기 설정
-        if (_bombChargeFillImage != null)
+        // 인디케이터 크기 초기화
+        if (_bombChargeIndicator != null)
         {
-            _bombChargeFillImage.color = _bombChargeColor;
-        }
-
-        // 충전 UI는 기본적으로 비활성화
-        if (_bombChargeContainer != null)
-        {
-            _bombChargeContainer.SetActive(false);
+            _bombChargeIndicator.localScale = Vector3.zero;
         }
 
         // 시작 시 값으로 UI 초기화
@@ -133,19 +124,20 @@ public class UI_PlayerStat : MonoBehaviour
     // 폭탄 충전 UI 업데이트
     private void UpdateBombChargeUI(float currentCharge, float maxCharge)
     {
-        if (_bombChargeSlider != null)
+        if (_bombChargeIndicator != null)
         {
             float ratio = currentCharge / maxCharge;
-            _bombChargeSlider.value = ratio;
+            _bombChargeIndicator.localScale = new Vector3(ratio, ratio, ratio);
         }
     }
 
     // 폭탄 충전 UI 활성화/비활성화
     private void SetBombChargeUIActive(bool isActive)
     {
-        if (_bombChargeContainer != null)
+        // 비활성화 시 인디케이터 크기 초기화
+        if (!isActive && _bombChargeIndicator != null)
         {
-            _bombChargeContainer.SetActive(isActive);
+            _bombChargeIndicator.localScale = Vector3.zero;
         }
     }
     #endregion

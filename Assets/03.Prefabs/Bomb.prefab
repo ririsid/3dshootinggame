@@ -149,4 +149,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ec6a77e8fa8aee46a2a7d8908502b10, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ExplosionEffectPrefab: {fileID: 100004, guid: b46890100828db6429ff69c322b45893, type: 3}
+  _explosionEffectPrefab: {fileID: 1694103830399813667, guid: 3dedd9e2e7172514ba11779a9aa413b3, type: 3}
+  _explosionDelay: 5
+  _explosionEffectDuration: 2
