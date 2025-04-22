@@ -2,8 +2,12 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using System.Collections;
 
-public class UI_ReloadDisplay : MonoBehaviour
+/// <summary>
+/// 재장전 진행상황을 표시하는 UI 컴포넌트
+/// </summary>
+public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
 {
     #region Fields
     [Header("UI 참조")]
@@ -45,11 +49,14 @@ public class UI_ReloadDisplay : MonoBehaviour
     private void Start()
     {
         // PlayerFire 컴포넌트 찾기
-        _playerFire = FindFirstObjectByType<PlayerFire>();
         if (_playerFire == null)
         {
-            Debug.LogError("PlayerFire 컴포넌트를 찾을 수 없습니다!", this);
-            return;
+            _playerFire = FindFirstObjectByType<PlayerFire>();
+            if (_playerFire == null)
+            {
+                Debug.LogError("PlayerFire 컴포넌트를 찾을 수 없습니다!", this);
+                return;
+            }
         }
 
         // 플레이어 스탯에서 재장전 시간 가져오기
@@ -58,21 +65,65 @@ public class UI_ReloadDisplay : MonoBehaviour
         {
             _reloadDuration = playerStat.ReloadTime;
         }
+    }
+    #endregion
 
-        // 이벤트 구독
-        _playerFire.OnReloadStateChanged += HandleReloadStateChanged;
-        _playerFire.OnReloadProgressChanged += HandleReloadProgressChanged;
-        _playerFire.OnReloadCancelled += HandleReloadCancelled;
+    #region Event Registration
+    protected override void RegisterEvents()
+    {
+        if (_playerFire != null)
+        {
+            _playerFire.OnReloadStateChanged += HandleReloadStateChanged;
+            _playerFire.OnReloadProgressChanged += HandleReloadProgressChanged;
+            _playerFire.OnReloadCancelled += HandleReloadCancelled;
+        }
     }
 
-    private void OnDestroy()
+    protected override void UnregisterEvents()
     {
-        // 이벤트 구독 해제
         if (_playerFire != null)
         {
             _playerFire.OnReloadStateChanged -= HandleReloadStateChanged;
             _playerFire.OnReloadProgressChanged -= HandleReloadProgressChanged;
             _playerFire.OnReloadCancelled -= HandleReloadCancelled;
+        }
+    }
+    #endregion
+
+    #region IUIPlayerComponent Implementation
+    /// <summary>
+    /// PlayerStat 참조 설정 (IUIPlayerComponent 구현)
+    /// </summary>
+    public void SetPlayerStat(PlayerStat playerStat)
+    {
+        // 이 컴포넌트는 PlayerStat을 직접 사용하지 않지만 재장전 시간을 참조
+        if (playerStat != null)
+        {
+            _reloadDuration = playerStat.ReloadTime;
+        }
+    }
+
+    /// <summary>
+    /// PlayerFire 참조 설정 (IUIPlayerComponent 구현)
+    /// </summary>
+    public void SetPlayerFire(PlayerFire playerFire)
+    {
+        // 기존 이벤트 해제
+        UnregisterEvents();
+
+        _playerFire = playerFire;
+
+        // 새 이벤트 등록
+        RegisterEvents();
+
+        // 재장전 시간 가져오기
+        if (_playerFire != null)
+        {
+            PlayerStat playerStat = _playerFire.GetComponent<PlayerStat>();
+            if (playerStat != null)
+            {
+                _reloadDuration = playerStat.ReloadTime;
+            }
         }
     }
     #endregion
@@ -169,7 +220,7 @@ public class UI_ReloadDisplay : MonoBehaviour
     /// <summary>
     /// CanvasGroup 페이드 애니메이션 코루틴
     /// </summary>
-    private System.Collections.IEnumerator FadeCanvasGroup(CanvasGroup canvasGroup, float targetAlpha, float duration)
+    private IEnumerator FadeCanvasGroup(CanvasGroup canvasGroup, float targetAlpha, float duration)
     {
         float startAlpha = canvasGroup.alpha;
         float time = 0f;

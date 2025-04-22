@@ -434,6 +434,7 @@ GameObject:
   m_Component:
   - component: {fileID: 182768454}
   - component: {fileID: 182768455}
+  - component: {fileID: 182768456}
   m_Layer: 5
   m_Name: StaminaSlider
   m_TagString: Untagged
@@ -514,6 +515,24 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &182768456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 182768453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8db0b7f15f3f5e343bbea7eb73cc88f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _staminaSlider: {fileID: 182768455}
+  _staminaText: {fileID: 0}
+  _staminaFillImage: {fileID: 309317121}
+  _normalColor: {r: 0, g: 0, b: 0.5882353, a: 1}
+  _lowColor: {r: 1, g: 0, b: 0, a: 1}
+  _lowStaminaThreshold: 0.3
 --- !u!1 &199092293
 GameObject:
   m_ObjectHideFlags: 0
@@ -528,7 +547,7 @@ GameObject:
   - component: {fileID: 199092295}
   - component: {fileID: 199092298}
   m_Layer: 5
-  m_Name: ReloadUI
+  m_Name: ReloadComponent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -637,8 +656,9 @@ GameObject:
   - component: {fileID: 215747288}
   - component: {fileID: 215747287}
   - component: {fileID: 215747286}
+  - component: {fileID: 215747289}
   m_Layer: 5
-  m_Name: BombPanel
+  m_Name: BombComponent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -729,6 +749,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 215747284}
   m_CullTransparentMesh: 1
+--- !u!114 &215747289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 215747284}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 37d6f4f555c1b194d99756cec756ea8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _bombCountText: {fileID: 1318626854}
+  _bombIcon: {fileID: 0}
+  _bombChargeIndicator: {fileID: 1357231710}
 --- !u!1 &309317119
 GameObject:
   m_ObjectHideFlags: 0
@@ -1635,7 +1670,7 @@ GameObject:
   - component: {fileID: 1308586619}
   - component: {fileID: 1308586621}
   m_Layer: 5
-  m_Name: AmmoUI
+  m_Name: AmmoComponent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2005,7 +2040,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 1
-  m_AdditionalShaderChannelsFlag: 25
+  m_AdditionalShaderChannelsFlag: 1
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 0
@@ -2025,8 +2060,8 @@ RectTransform:
   - {fileID: 89995285}
   - {fileID: 2063180879}
   - {fileID: 1357231710}
-  - {fileID: 199092294}
   - {fileID: 1308586618}
+  - {fileID: 199092294}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -2046,15 +2081,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 643680d0563806f4499e5f830a240d8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _staminaSlider: {fileID: 182768455}
-  _staminaText: {fileID: 0}
-  _staminaFillImage: {fileID: 0}
-  _normalColor: {r: 0, g: 1, b: 0, a: 1}
-  _lowColor: {r: 1, g: 0, b: 0, a: 1}
-  _lowStaminaThreshold: 0.3
-  _bombCountText: {fileID: 1318626854}
-  _bombIcon: {fileID: 0}
-  _bombChargeIndicator: {fileID: 1357231710}
   _playerStat: {fileID: 1964264924}
   _playerFire: {fileID: 1964264925}
 --- !u!1 &1442193869
@@ -2657,7 +2683,7 @@ GameObject:
   - component: {fileID: 2063180880}
   - component: {fileID: 2063180882}
   m_Layer: 5
-  m_Name: Crosshair
+  m_Name: CrosshairComponent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

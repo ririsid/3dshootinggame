@@ -1,182 +1,145 @@
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
+using System.Collections.Generic;
 
-public class UI_PlayerStat : MonoBehaviour
+/// <summary>
+/// UI 컴포넌트 참조 관리를 위한 인터페이스
+/// </summary>
+public interface IUIPlayerComponent
 {
-    [Header("스태미너 UI")]
-    [SerializeField] private Slider _staminaSlider;
-    [SerializeField] private TextMeshProUGUI _staminaText;
-    [SerializeField] private Image _staminaFillImage;
+    /// <summary>
+    /// PlayerStat 참조를 설정하는 메서드
+    /// </summary>
+    void SetPlayerStat(PlayerStat playerStat);
 
-    [Header("스태미너 색상 설정")]
-    [SerializeField] private Color _normalColor = Color.green;
-    [SerializeField] private Color _lowColor = Color.red;
-    [SerializeField] private float _lowStaminaThreshold = 0.3f; // 스태미너가 30% 이하면 색상 변경
+    /// <summary>
+    /// PlayerFire 참조를 설정하는 메서드
+    /// </summary>
+    void SetPlayerFire(PlayerFire playerFire);
+}
 
-    [Header("폭탄 UI")]
-    [SerializeField] private TextMeshProUGUI _bombCountText;
-    [SerializeField] private Image _bombIcon;
-
-    [Header("폭탄 충전 UI")]
-    [SerializeField] private Transform _bombChargeIndicator; // 충전 인디케이터 Transform
-
+/// <summary>
+/// 플레이어 스탯 UI 관리자 - 각 UI 컴포넌트를 관리하는 파사드(Facade) 역할
+/// </summary>
+public class UI_PlayerStat : UI_Component
+{
     [Header("참조")]
     [SerializeField] private PlayerStat _playerStat;
     [SerializeField] private PlayerFire _playerFire;
 
-    private void OnEnable()
+    // 모든 UI 컴포넌트를 관리할 리스트
+    private List<IUIPlayerComponent> _uiComponents = new List<IUIPlayerComponent>();
+
+    #region Unity Event Functions
+    private void Awake()
     {
-        SetupEvents();
+        // UI 컴포넌트 자동 수집
+        CollectUIComponents();
     }
 
     private void Start()
     {
-        // 인디케이터 크기 초기화
-        if (_bombChargeIndicator != null)
+        InitializeComponents();
+    }
+    #endregion
+
+    #region Component Collection
+    /// <summary>
+    /// 하위 UI 컴포넌트들을 수집하는 메서드
+    /// </summary>
+    private void CollectUIComponents()
+    {
+        // 자식 게임오브젝트에서 IUIPlayerComponent를 구현한 모든 컴포넌트 찾기
+        IUIPlayerComponent[] childComponents = GetComponentsInChildren<IUIPlayerComponent>(true);
+        foreach (var component in childComponents)
         {
-            _bombChargeIndicator.localScale = Vector3.zero;
+            if (!_uiComponents.Contains(component))
+            {
+                _uiComponents.Add(component);
+            }
         }
 
-        // 시작 시 값으로 UI 초기화
-        if (_playerStat != null)
-        {
-            UpdateStaminaUI(_playerStat.Stamina, _playerStat.MaxStamina);
-            UpdateBombCountUI(_playerStat.CurrentBombCount, _playerStat.MaxBombCount);
-        }
+        Debug.Log($"[UI_PlayerStat] {_uiComponents.Count}개의 UI 컴포넌트가 수집되었습니다.");
     }
 
-    private void OnDisable()
+    /// <summary>
+    /// UI 컴포넌트 초기화
+    /// </summary>
+    private void InitializeComponents()
     {
-        UnregisterEvents();
-    }
-
-    #region Event Registration
-    private void SetupEvents()
-    {
-        if (_playerStat != null)
+        // 수집된 모든 컴포넌트에 참조 전달
+        foreach (var component in _uiComponents)
         {
-            _playerStat.OnStaminaChanged += UpdateStaminaUI;
-            _playerStat.OnBombCountChanged += UpdateBombCountUI;
-        }
+            if (_playerStat != null)
+            {
+                component.SetPlayerStat(_playerStat);
+            }
 
-        if (_playerFire != null)
-        {
-            _playerFire.OnBombChargeChanged += UpdateBombChargeUI;
-            _playerFire.OnBombChargeStateChanged += SetBombChargeUIActive;
-        }
-    }
-
-    private void UnregisterEvents()
-    {
-        if (_playerStat != null)
-        {
-            _playerStat.OnStaminaChanged -= UpdateStaminaUI;
-            _playerStat.OnBombCountChanged -= UpdateBombCountUI;
-        }
-
-        if (_playerFire != null)
-        {
-            _playerFire.OnBombChargeChanged -= UpdateBombChargeUI;
-            _playerFire.OnBombChargeStateChanged -= SetBombChargeUIActive;
+            if (_playerFire != null)
+            {
+                component.SetPlayerFire(_playerFire);
+            }
         }
     }
     #endregion
 
-    #region UI Update Methods
-    // 스태미너 UI 업데이트
-    private void UpdateStaminaUI(float currentStamina, float maxStamina)
+    #region Event Callbacks
+    protected override void RegisterEvents()
     {
-        if (_staminaSlider != null)
-        {
-            float ratio = currentStamina / maxStamina;
-            _staminaSlider.value = ratio;
-
-            // 스태미너 텍스트 업데이트 (있는 경우)
-            if (_staminaText != null)
-            {
-                _staminaText.text = $"{Mathf.RoundToInt(currentStamina)} / {Mathf.RoundToInt(maxStamina)}";
-            }
-
-            // 스태미너 색상 변경 (있는 경우)
-            if (_staminaFillImage != null)
-            {
-                _staminaFillImage.color = ratio <= _lowStaminaThreshold ? _lowColor : _normalColor;
-            }
-        }
+        // 이 클래스에서는 직접적인 이벤트 등록이 필요 없음
+        // 각 컴포넌트가 자체적으로 이벤트를 처리함
     }
 
-    // 폭탄 개수 UI 업데이트
-    private void UpdateBombCountUI(int currentBombCount, int maxBombCount)
+    protected override void UnregisterEvents()
     {
-        if (_bombCountText != null)
-        {
-            _bombCountText.text = $"{currentBombCount}/{maxBombCount}";
-        }
-
-        // 폭탄 아이콘 표시/숨김 (폭탄이 없을 때 흐리게 표시 등의 효과)
-        if (_bombIcon != null)
-        {
-            _bombIcon.color = currentBombCount > 0 ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.5f);
-        }
-    }
-
-    // 폭탄 충전 UI 업데이트
-    private void UpdateBombChargeUI(float currentCharge, float maxCharge)
-    {
-        if (_bombChargeIndicator != null)
-        {
-            float ratio = currentCharge / maxCharge;
-            _bombChargeIndicator.localScale = new Vector3(ratio, ratio, ratio);
-        }
-    }
-
-    // 폭탄 충전 UI 활성화/비활성화
-    private void SetBombChargeUIActive(bool isActive)
-    {
-        // 비활성화 시 인디케이터 크기 초기화
-        if (!isActive && _bombChargeIndicator != null)
-        {
-            _bombChargeIndicator.localScale = Vector3.zero;
-        }
+        // 이 클래스에서는 직접적인 이벤트 해제가 필요 없음
+        // 각 컴포넌트가 자체적으로 이벤트를 처리함
     }
     #endregion
 
     #region Public Methods
-    // 참조 설정 메서드
+    /// <summary>
+    /// PlayerStat 참조 설정 및 하위 컴포넌트에 전달
+    /// </summary>
     public void SetupPlayerStat(PlayerStat playerStat)
     {
-        UnregisterEvents();
-
-        // 새 참조 설정
         _playerStat = playerStat;
 
-        SetupEvents();
-
-        // 초기 UI 업데이트
-        if (_playerStat != null)
+        // 모든 컴포넌트에 참조 전달
+        foreach (var component in _uiComponents)
         {
-            UpdateStaminaUI(_playerStat.Stamina, _playerStat.MaxStamina);
-            UpdateBombCountUI(_playerStat.CurrentBombCount, _playerStat.MaxBombCount);
+            component.SetPlayerStat(playerStat);
         }
     }
 
-    // PlayerFire 참조 설정 메서드
+    /// <summary>
+    /// PlayerFire 참조 설정 및 하위 컴포넌트에 전달
+    /// </summary>
     public void SetupPlayerFire(PlayerFire playerFire)
     {
-        if (_playerFire != null)
-        {
-            _playerFire.OnBombChargeChanged -= UpdateBombChargeUI;
-            _playerFire.OnBombChargeStateChanged -= SetBombChargeUIActive;
-        }
-
         _playerFire = playerFire;
 
-        if (_playerFire != null)
+        // 모든 컴포넌트에 참조 전달
+        foreach (var component in _uiComponents)
         {
-            _playerFire.OnBombChargeChanged += UpdateBombChargeUI;
-            _playerFire.OnBombChargeStateChanged += SetBombChargeUIActive;
+            component.SetPlayerFire(playerFire);
         }
+    }
+
+    /// <summary>
+    /// 특정 타입의 UI 컴포넌트를 가져옵니다.
+    /// </summary>
+    /// <typeparam name="T">가져올 컴포넌트 타입</typeparam>
+    /// <returns>찾은 컴포넌트, 없으면 null 반환</returns>
+    public T GetUIComponent<T>() where T : MonoBehaviour, IUIPlayerComponent
+    {
+        foreach (var component in _uiComponents)
+        {
+            if (component is T typedComponent)
+            {
+                return typedComponent;
+            }
+        }
+        return null;
     }
     #endregion
 }

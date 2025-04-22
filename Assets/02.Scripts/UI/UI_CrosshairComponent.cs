@@ -1,7 +1,7 @@
 using UnityEngine;
 using DG.Tweening;
 
-public class UI_Crosshair : MonoBehaviour
+public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
 {
     [Header("크로스헤어 설정")]
     [SerializeField] private RectTransform _crosshairTransform;
@@ -26,20 +26,10 @@ public class UI_Crosshair : MonoBehaviour
 
         _originalScale = _crosshairTransform.localScale;
     }
-
-    private void OnEnable()
-    {
-        SetupEvents();
-    }
-
-    private void OnDisable()
-    {
-        UnregisterEvents();
-    }
     #endregion
 
     #region Event Registration
-    private void SetupEvents()
+    protected override void RegisterEvents()
     {
         if (_playerFire != null)
         {
@@ -47,7 +37,7 @@ public class UI_Crosshair : MonoBehaviour
         }
     }
 
-    private void UnregisterEvents()
+    protected override void UnregisterEvents()
     {
         if (_playerFire != null)
         {
@@ -79,9 +69,9 @@ public class UI_Crosshair : MonoBehaviour
 
     #region Public Methods
     /// <summary>
-    /// PlayerFire 참조를 설정합니다.
+    /// PlayerFire 참조를 설정합니다. (IUIPlayerComponent 구현)
     /// </summary>
-    public void SetupPlayerFire(PlayerFire playerFire)
+    public void SetPlayerFire(PlayerFire playerFire)
     {
         // 기존 이벤트 연결 해제
         UnregisterEvents();
@@ -90,7 +80,24 @@ public class UI_Crosshair : MonoBehaviour
         _playerFire = playerFire;
 
         // 새 이벤트 연결
-        SetupEvents();
+        RegisterEvents();
+    }
+
+    /// <summary>
+    /// 이전 버전과의 호환성을 위한 메서드
+    /// </summary>
+    public void SetupPlayerFire(PlayerFire playerFire)
+    {
+        SetPlayerFire(playerFire);
+    }
+
+    /// <summary>
+    /// PlayerStat 참조를 설정합니다. (IUIPlayerComponent 구현)
+    /// 이 컴포넌트는 PlayerStat을 사용하지 않으므로 빈 구현입니다.
+    /// </summary>
+    public void SetPlayerStat(PlayerStat playerStat)
+    {
+        // 이 컴포넌트는 PlayerStat을 사용하지 않으므로 아무 작업도 수행하지 않음
     }
     #endregion
 }
