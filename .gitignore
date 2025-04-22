@@ -93,14 +93,6 @@ crashlytics-build.properties
 # 유료 폰트
 /[Aa]ssets/[Ff]onts/
 
-# JMO Assets 제외 (War FX)
-/[Aa]ssets/JMO Assets/*
-!/[Aa]ssets/JMO Assets/*.meta
-
-# Workshop 에셋 제외
-/[Aa]ssets/Workshop/
-!/[Aa]ssets/Workshop.meta
-
 # 기타 서드파티 플러그인 및 SDK
 /[Aa]ssets/Plugins/*/
 !/[Aa]ssets/Plugins/README.md
@@ -109,11 +101,6 @@ crashlytics-build.properties
 /[Aa]ssets/StreamingAssets/secrets.json
 /[Aa]ssets/Resources/api-keys.json
 /[Aa]ssets/[Ss]ettings/[Ss]ensitive/
-
-# DOTween 에셋 제외 (유료 애셋)
-/[Aa]ssets/Plugins/Demigiant/
-/[Aa]ssets/Resources/DOTweenSettings.asset
-!/[Aa]ssets/Plugins/Demigiant/*.meta
 
 # 라이선스 파일 (선택적)
 # LICENSE*.txt

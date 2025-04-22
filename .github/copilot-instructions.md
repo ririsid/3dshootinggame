@@ -13,6 +13,7 @@
 - `Assets/07.Animations`: 애니메이션 파일
 - `Assets/08.Materials`: 머티리얼
 - `Assets/09.ScriptableObjects`: ScriptableObject 데이터
+- `Assets/10.Fonts`: 게임 내 사용되는 폰트 파일
 
 ## 코딩 스타일
 
@@ -57,6 +58,7 @@
 - UI 클래스는 `UI_` 접두사로 시작합니다.
 - UI 업데이트는 이벤트 기반으로 처리하여 성능을 최적화합니다.
 - TextMeshPro를 모든 텍스트 표시에 사용합니다.
+- 폰트는 `Assets/10.Fonts` 폴더에서 관리하며, 텍스트 요소에는 지정된 폰트 에셋을 사용합니다.
 
 ## 확장 지침
 
