@@ -93,6 +93,10 @@ crashlytics-build.properties
 # 유료 폰트
 /[Aa]ssets/[Ff]onts/
 
+# JMO Assets 제외 (War FX)
+/[Aa]ssets/JMO Assets/*
+!/[Aa]ssets/JMO Assets/*.meta
+
 # 기타 서드파티 플러그인 및 SDK
 /[Aa]ssets/Plugins/*/
 !/[Aa]ssets/Plugins/README.md

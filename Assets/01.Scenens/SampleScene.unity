@@ -579,7 +579,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 620588707}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: CameraPosition
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -662,7 +662,7 @@ GameObject:
   - component: {fileID: 1140036847}
   - component: {fileID: 1140036846}
   - component: {fileID: 1140036845}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Nose
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1226,7 +1226,8 @@ GameObject:
   - component: {fileID: 1964264921}
   - component: {fileID: 1964264922}
   - component: {fileID: 1964264924}
-  m_Layer: 0
+  - component: {fileID: 1964264925}
+  m_Layer: 3
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1370,6 +1371,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _playerStatData: {fileID: 11400000, guid: 025bc6f2d1307dd41a416b030038b311, type: 2}
+--- !u!114 &1964264925
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1964264916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0b1d3c1638ade8498dd7d657587ca90, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  FirePosition: {fileID: 1140036843}
+  BombPrefab: {fileID: 3175025184163702015, guid: 320d9f65c121d524fa1cdba937633c56, type: 3}
+  ThrowPower: 15
 --- !u!1 &2126729821
 GameObject:
   m_ObjectHideFlags: 0
