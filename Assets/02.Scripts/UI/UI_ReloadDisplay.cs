@@ -1,0 +1,188 @@
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using System;
+
+public class UI_ReloadDisplay : MonoBehaviour
+{
+    #region Fields
+    [Header("UI 참조")]
+    [SerializeField] private Image _circularProgressImage;
+    [SerializeField] private TextMeshProUGUI _reloadTimeText;
+    [SerializeField] private CanvasGroup _canvasGroup;
+
+    [Header("애니메이션 설정")]
+    [SerializeField] private float _fadeInDuration = 0.2f;
+    [SerializeField] private float _fadeOutDuration = 0.3f;
+
+    [Header("텍스트 설정")]
+    [SerializeField] private string _reloadTextFormat = "{0:0.0}s";
+    [SerializeField] private Color _normalColor = Color.black;
+    [SerializeField] private Color _completeColor = Color.green;
+
+    private PlayerFire _playerFire;
+    private float _reloadDuration;
+    private bool _isVisible;
+    private Coroutine _fadeCoroutine;
+    #endregion
+
+    #region Unity Event Functions
+    private void Awake()
+    {
+        if (_canvasGroup == null)
+        {
+            _canvasGroup = GetComponent<CanvasGroup>();
+            if (_canvasGroup == null)
+            {
+                _canvasGroup = gameObject.AddComponent<CanvasGroup>();
+            }
+        }
+
+        _canvasGroup.alpha = 0f;
+        _isVisible = false;
+    }
+
+    private void Start()
+    {
+        // PlayerFire 컴포넌트 찾기
+        _playerFire = FindFirstObjectByType<PlayerFire>();
+        if (_playerFire == null)
+        {
+            Debug.LogError("PlayerFire 컴포넌트를 찾을 수 없습니다!", this);
+            return;
+        }
+
+        // 플레이어 스탯에서 재장전 시간 가져오기
+        PlayerStat playerStat = _playerFire.GetComponent<PlayerStat>();
+        if (playerStat != null)
+        {
+            _reloadDuration = playerStat.ReloadTime;
+        }
+
+        // 이벤트 구독
+        _playerFire.OnReloadStateChanged += HandleReloadStateChanged;
+        _playerFire.OnReloadProgressChanged += HandleReloadProgressChanged;
+        _playerFire.OnReloadCancelled += HandleReloadCancelled;
+    }
+
+    private void OnDestroy()
+    {
+        // 이벤트 구독 해제
+        if (_playerFire != null)
+        {
+            _playerFire.OnReloadStateChanged -= HandleReloadStateChanged;
+            _playerFire.OnReloadProgressChanged -= HandleReloadProgressChanged;
+            _playerFire.OnReloadCancelled -= HandleReloadCancelled;
+        }
+    }
+    #endregion
+
+    #region Private Methods
+    /// <summary>
+    /// 재장전 상태 변경 이벤트 핸들러
+    /// </summary>
+    private void HandleReloadStateChanged(bool isReloading)
+    {
+        if (isReloading)
+        {
+            ShowUI();
+        }
+        else
+        {
+            HideUI();
+        }
+    }
+
+    /// <summary>
+    /// 재장전 진행도 변경 이벤트 핸들러
+    /// </summary>
+    private void HandleReloadProgressChanged(float progress)
+    {
+        if (_circularProgressImage != null)
+        {
+            _circularProgressImage.fillAmount = progress;
+        }
+
+        if (_reloadTimeText != null)
+        {
+            float remainingTime = _reloadDuration * (1 - progress);
+            _reloadTimeText.text = string.Format(_reloadTextFormat, remainingTime);
+
+            // 진행도가 완료되면 텍스트 색상 변경
+            if (progress >= 0.99f)
+            {
+                _reloadTimeText.color = _completeColor;
+            }
+            else
+            {
+                _reloadTimeText.color = _normalColor;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 재장전 취소 이벤트 핸들러
+    /// </summary>
+    private void HandleReloadCancelled()
+    {
+        HideUI();
+    }
+
+    /// <summary>
+    /// UI 표시
+    /// </summary>
+    private void ShowUI()
+    {
+        if (_isVisible) return;
+
+        _isVisible = true;
+
+        // 진행 중인 페이드 코루틴이 있다면 중지
+        if (_fadeCoroutine != null)
+        {
+            StopCoroutine(_fadeCoroutine);
+        }
+
+        // 페이드 인 애니메이션
+        _fadeCoroutine = StartCoroutine(FadeCanvasGroup(_canvasGroup, 1f, _fadeInDuration));
+    }
+
+    /// <summary>
+    /// UI 숨기기
+    /// </summary>
+    private void HideUI()
+    {
+        if (!_isVisible) return;
+
+        _isVisible = false;
+
+        // 진행 중인 페이드 코루틴이 있다면 중지
+        if (_fadeCoroutine != null)
+        {
+            StopCoroutine(_fadeCoroutine);
+        }
+
+        // 페이드 아웃 애니메이션
+        _fadeCoroutine = StartCoroutine(FadeCanvasGroup(_canvasGroup, 0f, _fadeOutDuration));
+    }
+
+    /// <summary>
+    /// CanvasGroup 페이드 애니메이션 코루틴
+    /// </summary>
+    private System.Collections.IEnumerator FadeCanvasGroup(CanvasGroup canvasGroup, float targetAlpha, float duration)
+    {
+        float startAlpha = canvasGroup.alpha;
+        float time = 0f;
+
+        while (time < duration)
+        {
+            time += Time.deltaTime;
+            canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, time / duration);
+            yield return null;
+        }
+
+        canvasGroup.alpha = targetAlpha;
+        _fadeCoroutine = null;
+    }
+    #endregion
+}

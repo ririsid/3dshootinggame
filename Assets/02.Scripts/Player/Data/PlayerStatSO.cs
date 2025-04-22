@@ -116,4 +116,11 @@ public class PlayerStatSO : ScriptableObject
     [Header("발사 설정")]
     [Tooltip("발사 간격 (초)")]
     public float fireRate = 0.15f;
+
+    [Header("총알 설정")]
+    [Tooltip("최대 총알 수")]
+    public int maxAmmo = 50;
+
+    [Tooltip("재장전 시간 (초)")]
+    public float reloadTime = 2.0f;
 }

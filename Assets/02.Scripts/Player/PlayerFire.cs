@@ -19,6 +19,15 @@ public class PlayerFire : MonoBehaviour
     public event Action<float, float> OnBombChargeChanged; // (현재 충전량, 최대 충전량)
     public event Action<bool> OnBombChargeStateChanged; // (충전 중 여부)
 
+    // 총알/재장전 이벤트 추가
+    public event Action<int, int> OnAmmoChanged; // (현재 총알 수, 최대 총알 수)
+    public event Action<bool> OnReloadStateChanged; // (재장전 중 여부)
+    public event Action OnReloadCancelled; // 재장전 취소 시
+    public event Action<float> OnReloadProgressChanged; // (재장전 진행도 0.0f ~ 1.0f)
+
+    // 총 발사 이벤트 추가
+    public event Action OnWeaponFired; // 총이 발사될 때마다 호출
+
     private PlayerStat _playerStat;
     private bool _isChargingBomb = false;
     private float _currentBombCharge = 0f;
@@ -28,6 +37,10 @@ public class PlayerFire : MonoBehaviour
     // 연사 관련 변수 추가
     private float _nextFireTime = 0f;
     private bool _isFiring = false;
+
+    // 재장전 관련 변수
+    private bool _isReloading = false;
+    private Coroutine _reloadCoroutine;
     #endregion
 
     #region Properties
@@ -53,12 +66,31 @@ public class PlayerFire : MonoBehaviour
         // 오브젝트 풀 초기화
         InitializeBombPool();
         InitializeBulletEffectPool();
+
+        // 총알 초기화
+        _playerStat.InitializeAmmo();
+        OnAmmoChanged?.Invoke(_playerStat.CurrentAmmo, _playerStat.MaxAmmo);
+
+        // 이벤트 구독
+        _playerStat.OnAmmoChanged += HandleAmmoChanged;
+        _playerStat.OnReloadingChanged += HandleReloadingChanged;
+    }
+
+    private void OnDestroy()
+    {
+        // 이벤트 구독 해제
+        if (_playerStat != null)
+        {
+            _playerStat.OnAmmoChanged -= HandleAmmoChanged;
+            _playerStat.OnReloadingChanged -= HandleReloadingChanged;
+        }
     }
 
     private void Update()
     {
         HandleBombThrow();
         HandleGunFire();
+        HandleReload();
     }
     #endregion
 
@@ -184,6 +216,19 @@ public class PlayerFire : MonoBehaviour
     /// </summary>
     private void Fire()
     {
+        // 재장전 중이거나 총알이 없으면 발사하지 않음
+        if (_isReloading)
+        {
+            return;
+        }
+
+        // 총알 사용 시도
+        if (!_playerStat.UseAmmo())
+        {
+            // 총알이 없는 경우 발사하지 않고 리턴
+            return;
+        }
+
         // 다음 발사 가능 시간 설정
         _nextFireTime = Time.time + _playerStat.FireRate;
 
@@ -200,6 +245,9 @@ public class PlayerFire : MonoBehaviour
             // 피격 이펙트 생성(표시) - 오브젝트 풀링 사용
             CreateBulletHitEffect(hitInfo.point, hitInfo.normal);
         }
+
+        // 총 발사 이벤트 호출
+        OnWeaponFired?.Invoke();
     }
 
     /// <summary>
@@ -250,6 +298,124 @@ public class PlayerFire : MonoBehaviour
         {
             ObjectPoolManager.Instance.ReturnToPool(effect);
         }
+    }
+
+    /// <summary>
+    /// 재장전 처리
+    /// </summary>
+    private void HandleReload()
+    {
+        // R 키를 처음 누를 때 재장전 시작
+        if (Input.GetKeyDown(KeyCode.R) && !_isReloading && _playerStat.CurrentAmmo < _playerStat.MaxAmmo)
+        {
+            StartReload();
+        }
+        // R 키를 뗐을 때 재장전 취소
+        else if (Input.GetKeyUp(KeyCode.R) && _isReloading)
+        {
+            CancelReload();
+        }
+    }
+
+    /// <summary>
+    /// 재장전 시작
+    /// </summary>
+    private void StartReload()
+    {
+        if (_isReloading) return;
+
+        _playerStat.StartReloading();
+        _isReloading = true;
+
+        // 현재 진행 중인 재장전 코루틴이 있다면 중지
+        if (_reloadCoroutine != null)
+        {
+            StopCoroutine(_reloadCoroutine);
+        }
+
+        // 재장전 코루틴 시작
+        _reloadCoroutine = StartCoroutine(ReloadCoroutine());
+    }
+
+    /// <summary>
+    /// 재장전 코루틴
+    /// </summary>
+    private IEnumerator ReloadCoroutine()
+    {
+        float reloadTime = _playerStat.ReloadTime;
+        float elapsedTime = 0f;
+
+        // 재장전 시작 시 진행도 0으로 설정
+        OnReloadProgressChanged?.Invoke(0f);
+
+        // 재장전 시간 동안 진행도 업데이트
+        while (elapsedTime < reloadTime)
+        {
+            // R 키를 계속 누르고 있는지 확인
+            if (!Input.GetKey(KeyCode.R))
+            {
+                // R 키를 놓았다면 재장전 취소
+                CancelReload();
+                yield break;
+            }
+
+            elapsedTime += Time.deltaTime;
+            float progress = Mathf.Clamp01(elapsedTime / reloadTime);
+
+            // 재장전 진행도 이벤트 발생
+            OnReloadProgressChanged?.Invoke(progress);
+
+            yield return null;
+        }
+
+        // 재장전 완료 시 진행도 1로 설정
+        OnReloadProgressChanged?.Invoke(1f);
+
+        // 재장전 완료
+        _playerStat.CompleteReloading();
+        _isReloading = false;
+        _reloadCoroutine = null;
+    }
+
+    /// <summary>
+    /// 재장전 취소
+    /// </summary>
+    private void CancelReload()
+    {
+        if (!_isReloading) return;
+
+        // 코루틴 중지
+        if (_reloadCoroutine != null)
+        {
+            StopCoroutine(_reloadCoroutine);
+            _reloadCoroutine = null;
+        }
+
+        // 재장전 취소 처리
+        _playerStat.CancelReloading();
+        _isReloading = false;
+
+        // 재장전 진행도 초기화 (0으로 설정)
+        OnReloadProgressChanged?.Invoke(0f);
+
+        // 재장전 취소 이벤트 발생
+        OnReloadCancelled?.Invoke();
+    }
+
+    /// <summary>
+    /// 총알 개수 변경 이벤트 핸들러
+    /// </summary>
+    private void HandleAmmoChanged(int currentAmmo, int maxAmmo)
+    {
+        OnAmmoChanged?.Invoke(currentAmmo, maxAmmo);
+    }
+
+    /// <summary>
+    /// 재장전 상태 변경 이벤트 핸들러
+    /// </summary>
+    private void HandleReloadingChanged(bool isReloading)
+    {
+        OnReloadStateChanged?.Invoke(isReloading);
     }
     #endregion
 

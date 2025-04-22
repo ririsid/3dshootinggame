@@ -7,12 +7,17 @@ public class PlayerStat : MonoBehaviour
     public event Action<float, float> OnStaminaChanged; // (현재 스태미너, 최대 스태미너)
     // 폭탄 관련 이벤트 추가
     public event Action<int, int> OnBombCountChanged; // (현재 폭탄 개수, 최대 폭탄 개수)
+    // 총알 관련 이벤트 추가
+    public event Action<int, int> OnAmmoChanged; // (현재 총알 개수, 최대 총알 개수)
+    public event Action<bool> OnReloadingChanged; // 재장전 중 여부
 
     [Header("스탯 데이터")]
     [SerializeField] private PlayerStatSO _playerStatData;
 
     private float _stamina;
     private int _currentBombCount;
+    private int _currentAmmo;
+    private bool _isReloading;
 
     private void Awake()
     {
@@ -141,6 +146,34 @@ public class PlayerStat : MonoBehaviour
     public float BombChargingSpeed => _playerStatData.bombChargingSpeed;
     public float BombMaxChargeTime => _playerStatData.bombMaxChargeTime;
 
+    // 총알 관련 프로퍼티
+    public int CurrentAmmo
+    {
+        get => _currentAmmo;
+        private set
+        {
+            if (_currentAmmo != value)
+            {
+                _currentAmmo = Mathf.Clamp(value, 0, MaxAmmo);
+                OnAmmoChanged?.Invoke(_currentAmmo, MaxAmmo);
+            }
+        }
+    }
+    public int MaxAmmo => _playerStatData.maxAmmo;
+    public float ReloadTime => _playerStatData.reloadTime;
+    public bool IsReloading
+    {
+        get => _isReloading;
+        private set
+        {
+            if (_isReloading != value)
+            {
+                _isReloading = value;
+                OnReloadingChanged?.Invoke(_isReloading);
+            }
+        }
+    }
+
     // 필요한 경우 데이터 교체용 메서드
     public void SetPlayerStatData(PlayerStatSO newData)
     {
@@ -167,6 +200,48 @@ public class PlayerStat : MonoBehaviour
     public void AddBomb(int amount = 1)
     {
         CurrentBombCount += amount;
+    }
+    #endregion
+
+    #region 총알 관련 메서드
+    public void InitializeAmmo()
+    {
+        CurrentAmmo = MaxAmmo;
+    }
+
+    public bool UseAmmo()
+    {
+        if (IsReloading) return false;
+
+        if (CurrentAmmo > 0)
+        {
+            CurrentAmmo--;
+            return true;
+        }
+
+        return false;
+    }
+
+    public void StartReloading()
+    {
+        if (IsReloading || CurrentAmmo >= MaxAmmo) return;
+
+        IsReloading = true;
+    }
+
+    public void CompleteReloading()
+    {
+        if (!IsReloading) return;
+
+        CurrentAmmo = MaxAmmo;
+        IsReloading = false;
+    }
+
+    public void CancelReloading()
+    {
+        if (!IsReloading) return;
+
+        IsReloading = false;
     }
     #endregion
 }
