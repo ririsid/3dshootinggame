@@ -119,6 +119,9 @@ public class PlayerStat : MonoBehaviour
     public float WallInputThreshold => _playerStatData.wallInputThreshold;
     public float WallMaxDistance => _playerStatData.wallMaxDistance;
 
+    // 발사 관련 프로퍼티
+    public float FireRate => _playerStatData.fireRate;
+
     // 폭탄 관련 프로퍼티
     public int CurrentBombCount
     {

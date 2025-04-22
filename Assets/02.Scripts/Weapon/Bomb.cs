@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Bomb : MonoBehaviour
@@ -102,7 +103,7 @@ public class Bomb : MonoBehaviour
     /// <summary>
     /// 지정된 시간 후 이펙트를 풀에 반환
     /// </summary>
-    private System.Collections.IEnumerator ReturnEffectToPool(GameObject effect, float delay)
+    private IEnumerator ReturnEffectToPool(GameObject effect, float delay)
     {
         yield return new WaitForSeconds(delay);
 

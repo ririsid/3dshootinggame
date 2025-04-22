@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections;
 
 public class PlayerFire : MonoBehaviour
 {
@@ -23,6 +24,10 @@ public class PlayerFire : MonoBehaviour
     private float _currentBombCharge = 0f;
     private bool _isBombPoolInitialized = false;
     private bool _isBulletEffectPoolInitialized = false;
+
+    // 연사 관련 변수 추가
+    private float _nextFireTime = 0f;
+    private bool _isFiring = false;
     #endregion
 
     #region Properties
@@ -153,19 +158,47 @@ public class PlayerFire : MonoBehaviour
         // 왼쪽 버튼 입력 받기
         if (Input.GetMouseButtonDown(0))
         {
-            // 레이를 생성하고 발사 위치와 진행 방향을 설정
-            Ray ray = new Ray(_firePosition.transform.position, Camera.main.transform.forward);
+            _isFiring = true;
+            Fire();
+        }
 
-            // 레이와 부딛힌 물체의 정보를 저장할 변수를 생성
-            RaycastHit hitInfo = new RaycastHit();
-
-            // 레이를 발사한 다음,
-            bool isHit = Physics.Raycast(ray, out hitInfo);
-            if (isHit) // 데이터가 있다면(부딛혔다면)
+        // 버튼을 계속 누르고 있는 경우 연사 처리
+        if (Input.GetMouseButton(0) && _isFiring)
+        {
+            // 현재 시간이 다음 발사 가능 시간을 넘었는지 확인
+            if (Time.time >= _nextFireTime)
             {
-                // 피격 이펙트 생성(표시) - 오브젝트 풀링 사용
-                CreateBulletHitEffect(hitInfo.point, hitInfo.normal);
+                Fire();
             }
+        }
+
+        // 버튼을 떼면 연사 중지
+        if (Input.GetMouseButtonUp(0))
+        {
+            _isFiring = false;
+        }
+    }
+
+    /// <summary>
+    /// 총알 발사 처리
+    /// </summary>
+    private void Fire()
+    {
+        // 다음 발사 가능 시간 설정
+        _nextFireTime = Time.time + _playerStat.FireRate;
+
+        // 레이를 생성하고 발사 위치와 진행 방향을 설정
+        Ray ray = new Ray(_firePosition.transform.position, Camera.main.transform.forward);
+
+        // 레이와 부딛힌 물체의 정보를 저장할 변수를 생성
+        RaycastHit hitInfo = new RaycastHit();
+
+        // 레이를 발사한 다음,
+        bool isHit = Physics.Raycast(ray, out hitInfo);
+        if (isHit) // 데이터가 있다면(부딛혔다면)
+        {
+            // 피격 이펙트 생성(표시) - 오브젝트 풀링 사용
+            CreateBulletHitEffect(hitInfo.point, hitInfo.normal);
         }
     }
 
@@ -209,7 +242,7 @@ public class PlayerFire : MonoBehaviour
     /// <summary>
     /// 지정된 시간 후 이펙트를 풀에 반환
     /// </summary>
-    private System.Collections.IEnumerator ReturnEffectToPool(GameObject effect, float delay)
+    private IEnumerator ReturnEffectToPool(GameObject effect, float delay)
     {
         yield return new WaitForSeconds(delay);
 

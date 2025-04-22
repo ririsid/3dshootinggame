@@ -112,4 +112,8 @@ public class PlayerStatSO : ScriptableObject
 
     [Tooltip("폭탄 파워 충전 최대 시간 (초)")]
     public float bombMaxChargeTime = 2f;
+
+    [Header("발사 설정")]
+    [Tooltip("발사 간격 (초)")]
+    public float fireRate = 0.15f;
 }
