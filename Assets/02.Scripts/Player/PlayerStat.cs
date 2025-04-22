@@ -134,6 +134,9 @@ public class PlayerStat : MonoBehaviour
     }
     public int MaxBombCount => _playerStatData.maxBombCount;
     public float BombThrowPower => _playerStatData.bombThrowPower;
+    public float BombThrowMaxPower => _playerStatData.bombThrowMaxPower;
+    public float BombChargingSpeed => _playerStatData.bombChargingSpeed;
+    public float BombMaxChargeTime => _playerStatData.bombMaxChargeTime;
 
     // 필요한 경우 데이터 교체용 메서드
     public void SetPlayerStatData(PlayerStatSO newData)

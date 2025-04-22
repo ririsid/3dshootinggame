@@ -103,4 +103,13 @@ public class PlayerStatSO : ScriptableObject
 
     [Tooltip("폭탄 던지기 파워")]
     public float bombThrowPower = 15f;
+
+    [Tooltip("폭탄 던지기 최대 파워")]
+    public float bombThrowMaxPower = 30f;
+
+    [Tooltip("폭탄 파워 충전 속도 (초당)")]
+    public float bombChargingSpeed = 10f;
+
+    [Tooltip("폭탄 파워 충전 최대 시간 (초)")]
+    public float bombMaxChargeTime = 2f;
 }
