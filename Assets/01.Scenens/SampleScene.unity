@@ -2424,7 +2424,7 @@ MonoBehaviour:
   AttackCooldown: 1
   Health: 100
   DamagedTime: 0.5
-  _damagedTimer: 0
+  DeathTime: 1
 --- !u!1 &1816683542
 GameObject:
   m_ObjectHideFlags: 0
@@ -2588,8 +2588,9 @@ GameObject:
   - component: {fileID: 1964264918}
   - component: {fileID: 1964264923}
   - component: {fileID: 1964264921}
-  - component: {fileID: 1964264922}
   - component: {fileID: 1964264924}
+  - component: {fileID: 1964264926}
+  - component: {fileID: 1964264922}
   - component: {fileID: 1964264925}
   m_Layer: 3
   m_Name: Player
@@ -2752,6 +2753,20 @@ MonoBehaviour:
   _bulletEffectPoolSize: 10
   _bombPrefab: {fileID: 3175025184163702015, guid: 320d9f65c121d524fa1cdba937633c56, type: 3}
   _initialPoolSize: 5
+--- !u!114 &1964264926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1964264916}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6be62ab3db490b2469f86fad0c7ce32d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _moveInputThreshold: 0.1
+  _wallInputThreshold: 0.3
 --- !u!1 &2004207040
 GameObject:
   m_ObjectHideFlags: 0
