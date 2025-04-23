@@ -8,7 +8,6 @@ public class PlayerMove : MonoBehaviour
     private float _walkSpeed; // 걷기 속도
     private float _runSpeed; // 달리기 속도
     private float _moveInputThreshold; // 이동 감지 임계값
-    private float _diagonalMovementNormalizeThreshold; // 대각선 이동 정규화 임계값
 
     private float _currentMoveSpeed; // 현재 이동 속도
     private bool _isRunning = false; // 달리기 중인지 여부
@@ -70,6 +69,7 @@ public class PlayerMove : MonoBehaviour
     #region 내부 참조
     private PlayerStat _playerStat; // 플레이어 스탯 참조
     private CharacterController _characterController; // 캐릭터 컨트롤러 컴포넌트
+    private PlayerInputHandler _inputHandler; // 입력 처리 핸들러
     #endregion
 
     private void Awake()
@@ -81,6 +81,14 @@ public class PlayerMove : MonoBehaviour
         if (_playerStat == null)
         {
             Debug.LogError("PlayerStat 컴포넌트를 찾을 수 없습니다!", this);
+            return;
+        }
+
+        // PlayerInputHandler 컴포넌트 자동 참조
+        _inputHandler = GetComponent<PlayerInputHandler>();
+        if (_inputHandler == null)
+        {
+            Debug.LogError("PlayerInputHandler 컴포넌트를 찾을 수 없습니다!", this);
             return;
         }
 
@@ -131,7 +139,6 @@ public class PlayerMove : MonoBehaviour
         _walkSpeed = _playerStat.WalkSpeed;
         _runSpeed = _playerStat.RunSpeed;
         _moveInputThreshold = _playerStat.MoveInputThreshold;
-        _diagonalMovementNormalizeThreshold = _playerStat.DiagonalMovementNormalizeThreshold;
 
         // 점프 관련 변수 초기화
         _jumpPower = _playerStat.JumpPower;
@@ -159,23 +166,14 @@ public class PlayerMove : MonoBehaviour
 
     private void CalculateMoveDirection()
     {
-        // 키보드 입력을 받는다.
-        float h = Input.GetAxis("Horizontal");
-        float v = Input.GetAxis("Vertical");
-
-        // 입력으로부터 방향을 설정한다.
-        _moveDirection = new Vector3(h, 0f, v);
-        _moveDirection = _moveDirection.normalized;
-
-        // 메인 카메라를 기준으로 방향을 변환한다.
-        _moveDirection = Camera.main.transform.TransformDirection(_moveDirection);
-        // TransformDirection: 로컬 공간의 벡터를 월드 공간의 벡터로 바꿔주는 함수
+        // InputHandler에서 이동 방향 가져오기
+        _moveDirection = _inputHandler.MoveDirection;
     }
 
     private void HandleRunning()
     {
-        // Shift 키를 누르면 달리기
-        if (Input.GetKey(KeyCode.LeftShift) && _playerStat.Stamina > 0 && _moveDirection.magnitude > _moveInputThreshold)
+        // InputHandler에서 달리기 입력 가져오기
+        if (_inputHandler.IsRunPressed && _playerStat.Stamina > 0)
         {
             _isRunning = true;
             _currentMoveSpeed = _runSpeed;
@@ -195,11 +193,11 @@ public class PlayerMove : MonoBehaviour
         // 구르기 쿨다운 계산
         float timeSinceLastRoll = Time.time - _lastRollTime;
 
-        // E 키를 눌러 구르기 시작 (쿨다운 지났고, 현재 구르기 중이 아니며, 충분한 스태미너가 있을 때)
-        if (Input.GetKeyDown(KeyCode.E) && !_isRolling && timeSinceLastRoll >= _rollCooldown && _playerStat.Stamina >= _playerStat.RollStaminaCost)
+        // 구르기 입력 확인 (쿨다운 지났고, 현재 구르기 중이 아니며, 충분한 스태미너가 있을 때)
+        if (_inputHandler.IsRollPressed && !_isRolling && timeSinceLastRoll >= _rollCooldown && _playerStat.Stamina >= _playerStat.RollStaminaCost)
         {
             // 구르기 방향 설정 (현재 이동 방향 또는 바라보는 방향)
-            _rollDirection = _moveDirection.magnitude > _moveInputThreshold ? _moveDirection : transform.forward;
+            _rollDirection = _moveDirection;
             _rollDirection.y = _rollYAxisClearValue; // Y축 방향 초기화
             _rollDirection = _rollDirection.normalized;
 
@@ -249,8 +247,8 @@ public class PlayerMove : MonoBehaviour
 
     private void HandleJump()
     {
-        // 점프 적용
-        if (Input.GetButtonDown("Jump") && _jumpCount < _maxJumpCount)
+        // 점프 입력 확인
+        if (_inputHandler.IsJumpPressed && _jumpCount < _maxJumpCount)
         {
             // 첫 번째 점프이거나 이미 점프 중이라면 2단 점프 실행
             _yVelocity = _jumpPower;
@@ -263,8 +261,13 @@ public class PlayerMove : MonoBehaviour
         // 지면 충돌 확인 및 처리
         if (_characterController.isGrounded)
         {
-            _jumpCount = 0; // 땅에 닿으면 점프 카운트 초기화
-            _yVelocity = 0f; // 땅에 닿으면 Y축 속도 초기화 -> 중력 누적 방지
+            // 이번 프레임에 점프 입력이 없을 때만 점프 초기화
+            // HandleJump()가 먼저 값을 할당하는데 여기서 초기화 하면 점프가 안됨
+            if (!_inputHandler.IsJumpPressed)
+            {
+                _jumpCount = 0; // 땅에 닿으면 점프 카운트 초기화
+                _yVelocity = 0f; // 땅에 닿으면 Y축 속도 초기화 -> 중력 누적 방지
+            }
         }
 
         // 중력 적용
@@ -279,42 +282,34 @@ public class PlayerMove : MonoBehaviour
 
         if (_isWallClimbing)
         {
-            // 벽 오르기 중일 때 처리
-            float verticalInput = Input.GetAxis("Vertical");
-            float horizontalInput = Input.GetAxis("Horizontal");
+            // 벽 오르기 중일 때 InputHandler에서 방향 가져오기
+            movement = _inputHandler.GetWallClimbDirection(transform.right);
 
-            // 벽 오르기 중 대각선 이동 지원
-            Vector3 verticalMovement = Vector3.up * verticalInput;
-            Vector3 horizontalMovement = -transform.right * horizontalInput;
+            // 입력에 따른 속도 타입 결정
+            WallClimbSpeedType speedType = _inputHandler.GetWallClimbSpeedType();
 
-            // 대각선 이동을 위한 벡터 합산
-            movement = verticalMovement + horizontalMovement;
-
-            // 정규화 - 대각선 이동 시에도 속도 일정하게 유지
-            if (movement.magnitude > _diagonalMovementNormalizeThreshold)
+            // 속도 타입에 따른 이동 속도 결정
+            switch (speedType)
             {
-                movement.Normalize();
-            }
-
-            // 이동 속도 결정
-            if (verticalInput > _wallInputThreshold) // 상승 이동 중심
-            {
-                speed = _wallClimbSpeed;
-            }
-            else if (verticalInput < -_wallInputThreshold) // 하강 이동 중심
-            {
-                speed = _wallDescendSpeed;
-            }
-            else // 좌우 이동 중심
-            {
-                speed = _wallStrafeSpeed;
+                case WallClimbSpeedType.Climb:
+                    speed = _wallClimbSpeed;
+                    break;
+                case WallClimbSpeedType.Descend:
+                    speed = _wallDescendSpeed;
+                    break;
+                default:
+                    speed = _wallStrafeSpeed;
+                    break;
             }
 
             // 벽 오르기 중 스태미너 소모
             if (_playerStat.Stamina > 0)
             {
                 // 입력에 따른 스태미너 소모량 계산
-                float staminaCost = _playerStat.GetWallClimbStaminaCost(verticalInput, horizontalInput, _wallInputThreshold);
+                float staminaCost = _playerStat.GetWallClimbStaminaCost(
+                    _inputHandler.VerticalInput,
+                    _inputHandler.HorizontalInput,
+                    _inputHandler.WallInputThreshold);
                 _playerStat.UseStamina(staminaCost);
             }
             else
