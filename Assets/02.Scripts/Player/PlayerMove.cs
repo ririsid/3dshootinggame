@@ -249,12 +249,6 @@ public class PlayerMove : MonoBehaviour
 
     private void HandleJump()
     {
-        // 캐릭터가 땅 위에 있다면...
-        if (_characterController.isGrounded)
-        {
-            _jumpCount = 0; // 땅에 닿으면 점프 카운트 초기화
-        }
-
         // 점프 적용
         if (Input.GetButtonDown("Jump") && _jumpCount < _maxJumpCount)
         {
@@ -266,6 +260,13 @@ public class PlayerMove : MonoBehaviour
 
     private void ApplyGravity()
     {
+        // 지면 충돌 확인 및 처리
+        if (_characterController.isGrounded)
+        {
+            _jumpCount = 0; // 땅에 닿으면 점프 카운트 초기화
+            _yVelocity = 0f; // 땅에 닿으면 Y축 속도 초기화 -> 중력 누적 방지
+        }
+
         // 중력 적용
         _yVelocity += GRAVITY * Time.deltaTime;
     }
@@ -361,23 +362,19 @@ public class PlayerMove : MonoBehaviour
                 // 벽에서 너무 멀어지면 벽 오르기 중단
                 if (distanceToWall > _wallMaxDistance)
                 {
-                    _isWallClimbing = false;
-                    _currentWall = null;
+                    ResetWallClimbingState();
                 }
 
                 // 벽에서 내려갔는지 확인 (땅에 닿았는지)
                 if (_characterController.isGrounded && Input.GetAxis("Vertical") <= 0)
                 {
-                    _isWallClimbing = false;
-                    _currentWall = null;
-                    _yVelocity = 0f; // Y축 속도 초기화
+                    ResetWallClimbingState();
                 }
             }
             else
             {
                 // 스태미너가 0이면 벽에서 떨어짐
-                _isWallClimbing = false;
-                _currentWall = null;
+                ResetWallClimbingState();
             }
         }
         else
@@ -386,6 +383,14 @@ public class PlayerMove : MonoBehaviour
             _isWallClimbing = false;
             _currentWall = null;
         }
+    }
+
+    // 벽 오르기 상태 초기화 메서드
+    private void ResetWallClimbingState()
+    {
+        _isWallClimbing = false;
+        _currentWall = null;
+        _yVelocity = 0f;
     }
 
     // CharacterController가 다른 콜라이더와 충돌할 때 호출되는 메서드
@@ -406,6 +411,7 @@ public class PlayerMove : MonoBehaviour
                 {
                     // 벽 오르기 시작
                     _isWallClimbing = true;
+                    _yVelocity = 0f;
                 }
             }
         }
