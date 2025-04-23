@@ -2588,8 +2588,8 @@ GameObject:
   - component: {fileID: 1964264918}
   - component: {fileID: 1964264923}
   - component: {fileID: 1964264921}
-  - component: {fileID: 1964264924}
   - component: {fileID: 1964264926}
+  - component: {fileID: 1964264924}
   - component: {fileID: 1964264922}
   - component: {fileID: 1964264925}
   m_Layer: 3

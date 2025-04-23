@@ -58,22 +58,22 @@ public class PlayerStat : MonoBehaviour
         if (verticalInput > wallInputThreshold)
         {
             // 상승 (최대 소모율)
-            return _playerStatData.wallClimbStaminaUseRate * Time.deltaTime;
+            return _playerStatData.wallClimbStaminaUseRate;
         }
         else if (verticalInput < -wallInputThreshold)
         {
             // 하강 (오르기보다 적게)
-            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallDescendStaminaFactor * Time.deltaTime;
+            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallDescendStaminaFactor;
         }
         else if (Mathf.Abs(horizontalInput) > wallInputThreshold)
         {
             // 좌우 이동 (오르기보다 적게)
-            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallStrafeStaminaFactor * Time.deltaTime;
+            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallStrafeStaminaFactor;
         }
         else
         {
             // 입력 없음 (가장 적게)
-            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallIdleStaminaFactor * Time.deltaTime;
+            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallIdleStaminaFactor;
         }
     }
 
@@ -102,7 +102,6 @@ public class PlayerStat : MonoBehaviour
     public float WalkSpeed => _playerStatData.walkSpeed;
     public float RunSpeed => _playerStatData.runSpeed;
     public float MoveInputThreshold => _playerStatData.moveInputThreshold;
-    public float DiagonalMovementNormalizeThreshold => _playerStatData.diagonalMovementNormalizeThreshold;
 
     // 점프 관련 프로퍼티
     public float JumpPower => _playerStatData.jumpPower;
