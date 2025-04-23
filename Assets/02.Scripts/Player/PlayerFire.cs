@@ -244,6 +244,18 @@ public class PlayerFire : MonoBehaviour
         {
             // 피격 이펙트 생성(표시) - 오브젝트 풀링 사용
             CreateBulletHitEffect(hitInfo.point, hitInfo.normal);
+
+            if (hitInfo.collider.CompareTag("Enemy"))
+            {
+                Enemy enemy = hitInfo.collider.GetComponent<Enemy>();
+                if (enemy != null)
+                {
+                    Damage damage = new Damage();
+                    damage.Value = 10;
+                    damage.From = gameObject;
+                    enemy.TakeDamage(damage);
+                }
+            }
         }
 
         // 총 발사 이벤트 호출
