@@ -102,7 +102,6 @@ public class PlayerStat : MonoBehaviour
     public float WalkSpeed => _playerStatData.walkSpeed;
     public float RunSpeed => _playerStatData.runSpeed;
     public float MoveInputThreshold => _playerStatData.moveInputThreshold;
-    public float DiagonalMovementNormalizeThreshold => _playerStatData.diagonalMovementNormalizeThreshold;
 
     // 점프 관련 프로퍼티
     public float JumpPower => _playerStatData.jumpPower;

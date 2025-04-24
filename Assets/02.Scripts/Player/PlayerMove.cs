@@ -1,6 +1,18 @@
 using System;
 using UnityEngine;
 
+public enum PlayerMovementState
+{
+    Idle,       // 가만히 서 있는 상태
+    Walking,    // 걷는 상태
+    Running,    // 달리는 상태
+    Jumping,    // 점프 중인 상태 (상승)
+    Falling,    // 낙하 중인 상태 (공중)
+    Rolling,    // 구르기 중인 상태
+    WallClimbing // 벽 오르기 중인 상태
+}
+
+
 public class PlayerMove : MonoBehaviour
 {
     #region 이동 관련 변수
@@ -10,8 +22,7 @@ public class PlayerMove : MonoBehaviour
     private float _moveInputThreshold; // 이동 감지 임계값
 
     private float _currentMoveSpeed; // 현재 이동 속도
-    private bool _isRunning = false; // 달리기 중인지 여부
-    private Vector3 _moveDirection = Vector3.zero; // 이동 방향
+    private Vector3 _moveDirection = Vector3.zero; // 입력에 따른 이동 방향
     #endregion
 
     #region 점프 관련 변수
@@ -33,10 +44,9 @@ public class PlayerMove : MonoBehaviour
     private float _rollYAxisClearValue; // Y축 방향 초기화 값
     private float _rollDirectionDotThreshold; // 구르기 방향 결정 임계값
 
-    private bool _isRolling = false; // 구르기 중인지 여부
     private float _rollTimer = 0f; // 구르기 타이머
     private float _lastRollTime = -10f; // 마지막 구르기 시간 (쿨다운을 위함)
-    private Vector3 _rollDirection = Vector3.zero; // 구르기 방향
+    private Vector3 _rollDirection = Vector3.zero; // 실제 구르기 이동 방향
     private Quaternion _originalRotation; // 구르기 전 원래 회전값
     private Vector3 _rollRotationAxis = Vector3.left; // 구르기 회전축
     #endregion
@@ -51,100 +61,472 @@ public class PlayerMove : MonoBehaviour
     private float _wallInputThreshold; // 벽 오르기 중 입력 감지 기준값
     private float _wallMaxDistance; // 벽에서 떨어질 거리 기준값
 
-    private bool _isWallClimbing = false; // 벽 오르기 중인지 여부
     private Collider _currentWall; // 현재 접촉 중인 벽 콜라이더
     #endregion
 
+    #region 상태 변수
+    private PlayerMovementState _currentState = PlayerMovementState.Idle;
+    private bool _isRollComplete = false; // 구르기 완료 플래그
+    #endregion
+
     #region 공용 프로퍼티
-    // 외부에서 읽기만 가능한 프로퍼티들
     public float WalkSpeed => _walkSpeed;
     public float RunSpeed => _runSpeed;
     public float CurrentMoveSpeed => _currentMoveSpeed;
     public float JumpPower => _jumpPower;
     public int MaxJumpCount => _maxJumpCount;
-    public bool IsRunning => _isRunning;
-    public bool IsWallClimbing => _isWallClimbing;
     #endregion
 
     #region 내부 참조
-    private PlayerStat _playerStat; // 플레이어 스탯 참조
-    private CharacterController _characterController; // 캐릭터 컨트롤러 컴포넌트
-    private PlayerInputHandler _inputHandler; // 입력 처리 핸들러
+    private PlayerStat _playerStat;
+    private CharacterController _characterController;
+    private PlayerInputHandler _inputHandler;
     #endregion
 
     private void Awake()
     {
         _characterController = GetComponent<CharacterController>();
-
-        // PlayerStat 컴포넌트 자동 참조
         _playerStat = GetComponent<PlayerStat>();
-        if (_playerStat == null)
-        {
-            Debug.LogError("PlayerStat 컴포넌트를 찾을 수 없습니다!", this);
-            return;
-        }
-
-        // PlayerInputHandler 컴포넌트 자동 참조
         _inputHandler = GetComponent<PlayerInputHandler>();
-        if (_inputHandler == null)
-        {
-            Debug.LogError("PlayerInputHandler 컴포넌트를 찾을 수 없습니다!", this);
-            return;
-        }
 
-        // PlayerStat에서 모든 이동 스탯 초기화
+        if (_playerStat == null) Debug.LogError("PlayerStat 컴포넌트를 찾을 수 없습니다!", this);
+        if (_inputHandler == null) Debug.LogError("PlayerInputHandler 컴포넌트를 찾을 수 없습니다!", this);
+
         InitializeMovementStats();
     }
 
     private void Update()
     {
-        // 사용자 입력 처리 및 이동 방향 계산
+        HandleInput();
+        UpdateMovementState();
+        ApplyPhysicsAndMove();
+    }
+
+    private void HandleInput()
+    {
         CalculateMoveDirection();
+    }
 
-        // 벽 감지 및 오르기 처리
-        HandleWallClimbing();
+    private void CalculateMoveDirection()
+    {
+        _moveDirection = _inputHandler.MoveDirection;
+    }
 
-        // 벽에 붙어있지 않을 때만 일반 이동 처리
-        if (!_isWallClimbing)
+    private void UpdateMovementState()
+    {
+        if (HandleWallClimbingStateTransition()) return;
+        if (HandleRollingStateTransition()) return;
+        if (HandleAirborneStateTransition()) return;
+        if (HandleRunningStateTransition()) return;
+        if (HandleWalkingStateTransition()) return;
+
+        if (_characterController.isGrounded &&
+            _currentState != PlayerMovementState.Idle && // Idle 상태는 항상 유지
+            _currentState != PlayerMovementState.Rolling && // Rolling 상태는 구르기 종료 시 처리
+            _currentState != PlayerMovementState.WallClimbing) // WallClimbing 상태는 벽에서 떨어질 때 처리
         {
-            // 달리기 처리
-            HandleRunning();
+            SetState(PlayerMovementState.Idle);
+        }
+    }
 
-            // 구르기 처리
-            HandleRolling();
+    private void SetState(PlayerMovementState newState)
+    {
+        if (_currentState == newState) return;
 
-            // 점프 처리
-            HandleJump();
+        // 상태 종료 로직
+        switch (_currentState)
+        {
+            case PlayerMovementState.Rolling:
+                transform.rotation = _originalRotation; // 구르기 종료 시 회전 복원
+                break;
+            case PlayerMovementState.WallClimbing:
+                _currentWall = null; // 벽 참조 해제
+                break;
         }
 
-        // 중력 처리 (벽 오르기 중이 아닐 때만)
-        if (!_isWallClimbing)
+        _currentState = newState;
+
+        // 상태 시작 로직
+        switch (_currentState)
         {
-            ApplyGravity();
+            case PlayerMovementState.Rolling:
+                _rollTimer = 0f;
+                _lastRollTime = Time.time;
+                _playerStat.UseStamina(_playerStat.RollStaminaCost);
+                _originalRotation = transform.rotation;
+                CalculateRollDirectionAndAxis();
+                _isRollComplete = false; // 구르기 시작 시 완료 플래그 리셋
+                break;
+            case PlayerMovementState.WallClimbing:
+                _yVelocity = 0f;
+                _jumpCount = 0;
+                break;
+            case PlayerMovementState.Idle:
+            case PlayerMovementState.Walking:
+                if (_characterController.isGrounded) _jumpCount = 0; // 땅에 있을 때 점프 카운트 초기화
+                break;
         }
 
-        // 스태미너 회복 (벽 오르기 중이 아닐 때만)
-        if (!_isWallClimbing && !_isRunning)
+        // 상태에 따른 이동 속도 설정
+        switch (_currentState)
+        {
+            case PlayerMovementState.Running:
+                _currentMoveSpeed = _runSpeed;
+                break;
+            case PlayerMovementState.Walking:
+            case PlayerMovementState.Idle:
+            case PlayerMovementState.Falling:
+            case PlayerMovementState.Jumping:
+                _currentMoveSpeed = _walkSpeed; // 기본 속도를 걷기 속도로 설정
+                break;
+        }
+    }
+
+    private bool HandleWallClimbingStateTransition()
+    {
+        // 아직 벽 오르기 상태가 아니고, 땅에 있으며, 최근에 유효한 벽(_currentWall)과 충돌했고, 필요한 입력/스태미너 조건 만족 시
+        if (_currentState != PlayerMovementState.WallClimbing && _characterController.isGrounded && _currentWall != null)
+        {
+            bool hasEnoughStamina = _playerStat.Stamina > 0;
+            bool isPressingUp = _inputHandler.VerticalInput > _wallInputThreshold;
+            // isFacingWall, isSteepEnough 조건은 OnControllerColliderHit에서 _currentWall 설정 시 이미 검증됨
+
+            if (isPressingUp && hasEnoughStamina)
+            {
+                SetState(PlayerMovementState.WallClimbing);
+                return true; // 벽 오르기 시작
+            }
+        }
+
+        if (_currentState == PlayerMovementState.WallClimbing)
+        {
+            if (CheckWallClimbContinuationAndJump())
+            {
+                return true; // 벽 오르기 계속
+            }
+            else
+            {
+                // 벽 오르기 종료 조건 만족 (SetState는 Check~ 내부 또는 다른 상태 핸들러에서 처리)
+                return false; // 다른 상태 확인 계속
+            }
+        }
+
+        // 벽 오르기 상태가 아니고 땅에 있으면 벽 참조 초기화 (중요: 벽에서 떨어진 후 다시 붙는 경우 방지)
+        if (_currentState != PlayerMovementState.WallClimbing && _characterController.isGrounded)
+        {
+            _currentWall = null;
+        }
+
+        return false; // 벽 오르기 관련 상태 변경 없음
+    }
+
+    private bool CheckWallClimbContinuationAndJump()
+    {
+        if (_playerStat.Stamina <= 0) return false;
+        if (_currentWall == null) return false; // 벽 참조가 없으면 종료 (중요)
+        Vector3 closestPoint = _currentWall.ClosestPoint(transform.position);
+        float distanceToWall = Vector3.Distance(transform.position, closestPoint);
+        if (distanceToWall > _wallMaxDistance) return false;
+        if (_characterController.isGrounded && _inputHandler.VerticalInput <= 0) return false;
+
+        if (_inputHandler.IsJumpPressed)
+        {
+            Vector3 wallJumpDirection = (_currentWall.ClosestPointOnBounds(transform.position) - transform.position).normalized + Vector3.up;
+            _yVelocity = _jumpPower;
+            _moveDirection = wallJumpDirection;
+            SetState(PlayerMovementState.Jumping);
+            _jumpCount = 1;
+            return false; // 벽 오르기 종료
+        }
+        return true; // 벽 오르기 계속
+    }
+
+    private bool HandleRollingStateTransition()
+    {
+        float timeSinceLastRoll = Time.time - _lastRollTime;
+
+        // 구르기 시작 조건
+        if (_inputHandler.IsRollPressed && _currentState != PlayerMovementState.Rolling &&
+            timeSinceLastRoll >= _rollCooldown && _playerStat.Stamina >= _playerStat.RollStaminaCost &&
+            _currentState != PlayerMovementState.WallClimbing && _characterController.isGrounded)
+        {
+            SetState(PlayerMovementState.Rolling);
+            return true;
+        }
+
+        // 구르기 진행 및 종료 처리
+        if (_currentState == PlayerMovementState.Rolling)
+        {
+            UpdateRolling();
+            if (_isRollComplete) return false; // 구르기 완료 시 다른 상태 확인 허용
+            return _currentState == PlayerMovementState.Rolling; // 완료되지 않았으면 구르기 상태 유지
+        }
+
+        return false;
+    }
+
+    private void CalculateRollDirectionAndAxis()
+    {
+        Vector3 inputDir = _moveDirection.normalized;
+        _rollDirection = (inputDir.sqrMagnitude > 0.1f) ? inputDir : Vector3.zero;
+        if (_rollDirection != Vector3.zero)
+        {
+            _rollDirection.y = 0;
+            _rollDirection = _rollDirection.normalized;
+        }
+
+        if (_rollDirection == Vector3.zero)
+        {
+            _rollRotationAxis = Vector3.right;
+        }
+        else
+        {
+            float dotProduct = Vector3.Dot(transform.forward, _rollDirection);
+            _rollRotationAxis = (dotProduct < _rollDirectionDotThreshold) ? Vector3.left : Vector3.right;
+        }
+    }
+
+    private void UpdateRolling()
+    {
+        _rollTimer += Time.deltaTime;
+
+        float rollRotationAngle = _rollRotationSpeed * _rollTimer;
+        transform.rotation = _originalRotation * Quaternion.AngleAxis(rollRotationAngle, _rollRotationAxis);
+
+        // 구르기 종료 (시간 초과)
+        if (_rollTimer >= _rollDuration)
+        {
+            _isRollComplete = true; // 완료 플래그 설정
+            return; // 상태 변경은 다음 프레임 UpdateMovementState에서 처리
+        }
+
+        // 구르기 중 점프
+        if (_inputHandler.IsJumpPressed)
+        {
+            _yVelocity = _jumpPower;
+            SetState(PlayerMovementState.Jumping);
+            _jumpCount = 1;
+            // _rollComplete는 false인 상태로 점프로 넘어감
+        }
+    }
+
+    private bool HandleAirborneStateTransition()
+    {
+        if (_inputHandler.IsJumpPressed && _currentState != PlayerMovementState.Rolling &&
+            _currentState != PlayerMovementState.WallClimbing && _jumpCount < _maxJumpCount)
+        {
+            _yVelocity = _jumpPower;
+            _jumpCount++;
+            SetState(PlayerMovementState.Jumping);
+            return true;
+        }
+
+        if (!_characterController.isGrounded)
+        {
+            if (_currentState != PlayerMovementState.Jumping && _currentState != PlayerMovementState.Falling)
+            {
+                SetState(_yVelocity > 0 ? PlayerMovementState.Jumping : PlayerMovementState.Falling);
+            }
+            else if (_currentState == PlayerMovementState.Jumping && _yVelocity <= 0)
+            {
+                SetState(PlayerMovementState.Falling); // 상승 중 속도가 0 이하가 되면 낙하 상태로 변경
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private bool HandleRunningStateTransition()
+    {
+        if (_inputHandler.IsRunPressed && _playerStat.Stamina > 0 && _characterController.isGrounded &&
+            _currentState != PlayerMovementState.Rolling && _currentState != PlayerMovementState.WallClimbing &&
+            _currentState != PlayerMovementState.Jumping && _currentState != PlayerMovementState.Falling &&
+            _moveDirection.sqrMagnitude > _moveInputThreshold * _moveInputThreshold)
+        {
+            _playerStat.UseStamina(_playerStat.StaminaUseRate * Time.deltaTime);
+            SetState(PlayerMovementState.Running);
+            return true;
+        }
+        else if (_currentState == PlayerMovementState.Running &&
+                 (!_inputHandler.IsRunPressed || _playerStat.Stamina <= 0 || !_characterController.isGrounded ||
+                  _moveDirection.sqrMagnitude <= _moveInputThreshold * _moveInputThreshold))
+        {
+            return false; // 달리기 종료 조건, 다른 상태 확인 계속
+        }
+        return _currentState == PlayerMovementState.Running;
+    }
+
+    private bool HandleWalkingStateTransition()
+    {
+        if (_moveDirection.sqrMagnitude > _moveInputThreshold * _moveInputThreshold && _characterController.isGrounded &&
+             _currentState != PlayerMovementState.Rolling && _currentState != PlayerMovementState.WallClimbing &&
+             _currentState != PlayerMovementState.Jumping && _currentState != PlayerMovementState.Falling &&
+             _currentState != PlayerMovementState.Running)
+        {
+            SetState(PlayerMovementState.Walking);
+            return true;
+        }
+        return _currentState == PlayerMovementState.Walking;
+    }
+
+    private void ApplyPhysicsAndMove()
+    {
+        ApplyGravity();
+
+        if (_currentState == PlayerMovementState.Idle || _currentState == PlayerMovementState.Walking)
         {
             _playerStat.RecoverStamina();
         }
 
-        // 최종 이동 적용
-        ApplyMovement();
+        CalculateAndApplyMovement();
     }
+
+    private void ApplyGravity()
+    {
+        if (_currentState == PlayerMovementState.WallClimbing)
+        {
+            _yVelocity = 0f;
+            return;
+        }
+
+        if (_characterController.isGrounded)
+        {
+            if (!_inputHandler.IsJumpPressed && _currentState != PlayerMovementState.Rolling)
+            {
+                _yVelocity = -1f; // 땅에 붙도록 함
+            }
+        }
+        else
+        {
+            _yVelocity += GRAVITY * Time.deltaTime;
+        }
+    }
+
+    private void CalculateAndApplyMovement()
+    {
+        Vector3 finalMovement = Vector3.zero;
+        float currentSpeed = _currentMoveSpeed;
+
+        switch (_currentState)
+        {
+            case PlayerMovementState.WallClimbing:
+                finalMovement = CalculateWallClimbMovement(out currentSpeed);
+                break;
+            case PlayerMovementState.Rolling:
+                finalMovement = CalculateRollMovement(out currentSpeed);
+                finalMovement.y = _yVelocity; // 구르기 중 중력 적용
+                break;
+            case PlayerMovementState.Jumping:
+            case PlayerMovementState.Falling:
+                finalMovement = CalculateAirborneMovement(out currentSpeed);
+                finalMovement.y = _yVelocity;
+                break;
+            case PlayerMovementState.Running:
+            case PlayerMovementState.Walking:
+                finalMovement = CalculateGroundMovement(out currentSpeed);
+                finalMovement.y = _yVelocity;
+                break;
+            case PlayerMovementState.Idle:
+                finalMovement = Vector3.zero;
+                finalMovement.y = _yVelocity;
+                currentSpeed = 1f;
+                break;
+        }
+
+        _characterController.Move(finalMovement * currentSpeed * Time.deltaTime);
+    }
+
+    private Vector3 CalculateGroundMovement(out float speed)
+    {
+        speed = _currentMoveSpeed;
+        return _moveDirection;
+    }
+
+    private Vector3 CalculateAirborneMovement(out float speed)
+    {
+        speed = _currentMoveSpeed;
+        return _moveDirection;
+    }
+
+    private Vector3 CalculateRollMovement(out float speed)
+    {
+        speed = _rollSpeed;
+        return _rollDirection;
+    }
+
+    private Vector3 CalculateWallClimbMovement(out float speed)
+    {
+        Vector3 wallMovement = _inputHandler.GetWallClimbDirection(transform.right);
+        WallClimbSpeedType speedType = _inputHandler.GetWallClimbSpeedType();
+
+        switch (speedType)
+        {
+            case WallClimbSpeedType.Climb:
+                speed = _wallClimbSpeed;
+                break;
+            case WallClimbSpeedType.Descend:
+                speed = _wallDescendSpeed;
+                break;
+            default: // Strafe
+                speed = _wallStrafeSpeed;
+                break;
+        }
+
+        if (_playerStat.Stamina > 0)
+        {
+            float staminaCost = _playerStat.GetWallClimbStaminaCost(
+                _inputHandler.VerticalInput,
+                _inputHandler.HorizontalInput,
+                _inputHandler.WallInputThreshold);
+            _playerStat.UseStamina(staminaCost);
+        }
+        else
+        {
+            // 스태미너 없으면 상태 변경은 UpdateMovementState에서 처리
+            speed = 0f;
+            return Vector3.zero;
+        }
+        return wallMovement;
+    }
+
+    #region Unity Event Functions
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        bool isWallLayer = ((1 << hit.collider.gameObject.layer) & _wallLayer) != 0;
+        if (!isWallLayer) return;
+
+        bool canAttemptWallClimb = (_currentState == PlayerMovementState.Idle ||
+                                   _currentState == PlayerMovementState.Walking ||
+                                   _currentState == PlayerMovementState.Running) &&
+                                   _currentState != PlayerMovementState.Rolling; // 구르기 중에는 벽 오르기 시도 불가
+
+        if (!canAttemptWallClimb) return;
+
+        float wallNormalY = Mathf.Abs(hit.normal.y);
+        bool isSteepEnough = wallNormalY < _minWallNormalY;
+        if (!isSteepEnough) return;
+
+        float dotProduct = Vector3.Dot(transform.forward, -hit.normal);
+        bool isFacingWall = dotProduct > 0.5f;
+        bool hasEnoughStamina = _playerStat.Stamina > 0;
+        bool isPressingUp = _inputHandler.VerticalInput > _wallInputThreshold;
+
+        if (isFacingWall && hasEnoughStamina && isPressingUp)
+        {
+            _currentWall = hit.collider; // 벽 정보 저장
+        }
+    }
+    #endregion
 
     private void InitializeMovementStats()
     {
-        // PlayerStatSO의 값으로 이동 관련 변수 초기화
         _walkSpeed = _playerStat.WalkSpeed;
         _runSpeed = _playerStat.RunSpeed;
         _moveInputThreshold = _playerStat.MoveInputThreshold;
 
-        // 점프 관련 변수 초기화
         _jumpPower = _playerStat.JumpPower;
         _maxJumpCount = _playerStat.MaxJumpCount;
 
-        // 구르기 관련 변수 초기화
         _rollSpeed = _playerStat.RollSpeed;
         _rollDuration = _playerStat.RollDuration;
         _rollCooldown = _playerStat.RollCooldown;
@@ -152,7 +534,6 @@ public class PlayerMove : MonoBehaviour
         _rollYAxisClearValue = _playerStat.RollYAxisClearValue;
         _rollDirectionDotThreshold = _playerStat.RollDirectionDotThreshold;
 
-        // 벽 오르기 관련 변수 초기화
         _wallClimbSpeed = _playerStat.WallClimbSpeed;
         _wallDescendSpeed = _playerStat.WallDescendSpeed;
         _wallStrafeSpeed = _playerStat.WallStrafeSpeed;
@@ -160,255 +541,7 @@ public class PlayerMove : MonoBehaviour
         _wallInputThreshold = _playerStat.WallInputThreshold;
         _wallMaxDistance = _playerStat.WallMaxDistance;
 
-        // 초기값 설정
         _currentMoveSpeed = _walkSpeed;
-    }
-
-    private void CalculateMoveDirection()
-    {
-        // InputHandler에서 이동 방향 가져오기
-        _moveDirection = _inputHandler.MoveDirection;
-    }
-
-    private void HandleRunning()
-    {
-        // InputHandler에서 달리기 입력 가져오기
-        if (_inputHandler.IsRunPressed && _playerStat.Stamina > 0)
-        {
-            _isRunning = true;
-            _currentMoveSpeed = _runSpeed;
-
-            // 달릴 때 스태미너 소모
-            _playerStat.UseStamina(_playerStat.StaminaUseRate * Time.deltaTime);
-        }
-        else
-        {
-            _isRunning = false;
-            _currentMoveSpeed = _walkSpeed;
-        }
-    }
-
-    private void HandleRolling()
-    {
-        // 구르기 쿨다운 계산
-        float timeSinceLastRoll = Time.time - _lastRollTime;
-
-        // 구르기 입력 확인 (쿨다운 지났고, 현재 구르기 중이 아니며, 충분한 스태미너가 있을 때)
-        if (_inputHandler.IsRollPressed && !_isRolling && timeSinceLastRoll >= _rollCooldown && _playerStat.Stamina >= _playerStat.RollStaminaCost)
-        {
-            // 구르기 방향 설정 (현재 이동 방향 또는 바라보는 방향)
-            _rollDirection = _moveDirection;
-            _rollDirection.y = _rollYAxisClearValue; // Y축 방향 초기화
-            _rollDirection = _rollDirection.normalized;
-
-            // 구르기 상태 설정
-            _isRolling = true;
-            _rollTimer = 0f;
-            _lastRollTime = Time.time;
-
-            // 스태미너 소모
-            _playerStat.UseStamina(_playerStat.RollStaminaCost);
-
-            // 구르기 전 원래 회전값 저장
-            _originalRotation = transform.rotation;
-
-            // 이동 방향이 앞인지 뒤인지 확인하여 회전 방향 결정
-            // 캐릭터의 정면 벡터와 이동 방향 간의 내적을 계산
-            float dotProduct = Vector3.Dot(transform.forward, _rollDirection);
-
-            // 내적이 임계값보다 작으면 앞으로 이동 중임을 의미
-            if (dotProduct < _rollDirectionDotThreshold)
-            {
-                _rollRotationAxis = Vector3.left;
-            }
-            else
-            {
-                _rollRotationAxis = Vector3.right;
-            }
-        }
-
-        // 구르기 진행 중이라면
-        if (_isRolling)
-        {
-            _rollTimer += Time.deltaTime;
-
-            // 구르기 회전 적용
-            float rollRotationAngle = _rollRotationSpeed * _rollTimer;
-            transform.rotation = _originalRotation * Quaternion.AngleAxis(rollRotationAngle, _rollRotationAxis);
-
-            // 구르기 시간이 지났으면 종료
-            if (_rollTimer >= _rollDuration)
-            {
-                _isRolling = false;
-                transform.rotation = _originalRotation; // 구르기 종료 시 원래 회전값으로 복원
-            }
-        }
-    }
-
-    private void HandleJump()
-    {
-        // 점프 입력 확인
-        if (_inputHandler.IsJumpPressed && _jumpCount < _maxJumpCount)
-        {
-            // 첫 번째 점프이거나 이미 점프 중이라면 2단 점프 실행
-            _yVelocity = _jumpPower;
-            _jumpCount++; // 점프 카운트 증가
-        }
-    }
-
-    private void ApplyGravity()
-    {
-        // 지면 충돌 확인 및 처리
-        if (_characterController.isGrounded)
-        {
-            // 이번 프레임에 점프 입력이 없을 때만 점프 초기화
-            // HandleJump()가 먼저 값을 할당하는데 여기서 초기화 하면 점프가 안됨
-            if (!_inputHandler.IsJumpPressed)
-            {
-                _jumpCount = 0; // 땅에 닿으면 점프 카운트 초기화
-                _yVelocity = 0f; // 땅에 닿으면 Y축 속도 초기화 -> 중력 누적 방지
-            }
-        }
-
-        // 중력 적용
-        _yVelocity += GRAVITY * Time.deltaTime;
-    }
-
-    private void ApplyMovement()
-    {
-        // 수평 이동 계산
-        Vector3 movement;
-        float speed;
-
-        if (_isWallClimbing)
-        {
-            // 벽 오르기 중일 때 InputHandler에서 방향 가져오기
-            movement = _inputHandler.GetWallClimbDirection(transform.right);
-
-            // 입력에 따른 속도 타입 결정
-            WallClimbSpeedType speedType = _inputHandler.GetWallClimbSpeedType();
-
-            // 속도 타입에 따른 이동 속도 결정
-            switch (speedType)
-            {
-                case WallClimbSpeedType.Climb:
-                    speed = _wallClimbSpeed;
-                    break;
-                case WallClimbSpeedType.Descend:
-                    speed = _wallDescendSpeed;
-                    break;
-                default:
-                    speed = _wallStrafeSpeed;
-                    break;
-            }
-
-            // 벽 오르기 중 스태미너 소모
-            if (_playerStat.Stamina > 0)
-            {
-                // 입력에 따른 스태미너 소모량 계산
-                float staminaCost = _playerStat.GetWallClimbStaminaCost(
-                    _inputHandler.VerticalInput,
-                    _inputHandler.HorizontalInput,
-                    _inputHandler.WallInputThreshold);
-                _playerStat.UseStamina(staminaCost);
-            }
-            else
-            {
-                // 스태미너가 0이면 벽에서 떨어짐 (자유낙하)
-                _isWallClimbing = false;
-                movement = Vector3.zero;
-            }
-        }
-        else if (_isRolling)
-        {
-            // 구르기 중일 때 구르기 방향으로 이동
-            movement = _rollDirection;
-            speed = _rollSpeed;
-        }
-        else
-        {
-            // 일반 이동
-            movement = _moveDirection;
-            speed = _currentMoveSpeed;
-        }
-
-        // Y축 속도 적용 (벽 오르기 중이 아니면 중력/점프에 의해 결정)
-        if (!_isWallClimbing)
-        {
-            movement.y = _yVelocity;
-        }
-
-        // 캐릭터 컨트롤러로 최종 이동 적용
-        _characterController.Move(movement * speed * Time.deltaTime);
-    }
-
-    private void HandleWallClimbing()
-    {
-        // 벽 오르기 중이고 아직 벽이 감지되면
-        if (_isWallClimbing && _currentWall != null)
-        {
-            // 벽에서 아직 스태미너가 있는지 확인
-            if (_playerStat.Stamina > 0)
-            {
-                // 플레이어 위치와 벽 사이의 거리 확인 (벽에서 멀어졌는지 확인)
-                Vector3 closestPoint = _currentWall.ClosestPoint(transform.position);
-                float distanceToWall = Vector3.Distance(transform.position, closestPoint);
-
-                // 벽에서 너무 멀어지면 벽 오르기 중단
-                if (distanceToWall > _wallMaxDistance)
-                {
-                    ResetWallClimbingState();
-                }
-
-                // 벽에서 내려갔는지 확인 (땅에 닿았는지)
-                if (_characterController.isGrounded && Input.GetAxis("Vertical") <= 0)
-                {
-                    ResetWallClimbingState();
-                }
-            }
-            else
-            {
-                // 스태미너가 0이면 벽에서 떨어짐
-                ResetWallClimbingState();
-            }
-        }
-        else
-        {
-            // 벽 오르기 상태가 아니면 상태 초기화
-            _isWallClimbing = false;
-            _currentWall = null;
-        }
-    }
-
-    // 벽 오르기 상태 초기화 메서드
-    private void ResetWallClimbingState()
-    {
-        _isWallClimbing = false;
-        _currentWall = null;
-        _yVelocity = 0f;
-    }
-
-    // CharacterController가 다른 콜라이더와 충돌할 때 호출되는 메서드
-    private void OnControllerColliderHit(ControllerColliderHit hit)
-    {
-        // 충돌이 벽 레이어인지 확인
-        if (((1 << hit.collider.gameObject.layer) & _wallLayer) != 0)
-        {
-            // 법선 벡터 확인 (수직 벽인지 확인)
-            if (Mathf.Abs(hit.normal.y) < _minWallNormalY)
-            {
-                // 벽 정보 저장
-                _currentWall = hit.collider;
-
-                // 벽을 향해 이동 중인지 확인
-                float dotProduct = Vector3.Dot(transform.forward, hit.normal);
-                if (dotProduct > _rollDirectionDotThreshold && _playerStat.Stamina > 0 && Input.GetAxis("Vertical") > _wallInputThreshold)
-                {
-                    // 벽 오르기 시작
-                    _isWallClimbing = true;
-                    _yVelocity = 0f;
-                }
-            }
-        }
+        SetState(PlayerMovementState.Idle); // 초기 상태 설정
     }
 }

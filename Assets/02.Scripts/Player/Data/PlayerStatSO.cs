@@ -27,10 +27,6 @@ public class PlayerStatSO : ScriptableObject
     [Range(0f, 1f)]
     public float moveInputThreshold = 0.1f;
 
-    [Tooltip("대각선 이동 정규화 임계값")]
-    [Range(0f, 2f)]
-    public float diagonalMovementNormalizeThreshold = 1.0f;
-
     [Header("점프 설정")]
     [Tooltip("점프 파워")]
     public float jumpPower = 5f;
