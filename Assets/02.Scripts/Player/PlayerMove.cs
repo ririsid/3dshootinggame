@@ -120,7 +120,10 @@ public class PlayerMove : MonoBehaviour
         if (HandleRunningStateTransition()) return;
         if (HandleWalkingStateTransition()) return;
 
-        if (_characterController.isGrounded)
+        if (_characterController.isGrounded &&
+            _currentState != PlayerMovementState.Idle && // Idle 상태는 항상 유지
+            _currentState != PlayerMovementState.Rolling && // Rolling 상태는 구르기 종료 시 처리
+            _currentState != PlayerMovementState.WallClimbing) // WallClimbing 상태는 벽에서 떨어질 때 처리
         {
             SetState(PlayerMovementState.Idle);
         }
