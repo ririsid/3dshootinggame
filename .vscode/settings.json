@@ -57,6 +57,11 @@
     "Temp/": true
   },
   "dotnet.defaultSolution": "3dshootinggame.sln",
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": ".copilot-code-generation-instructions.md"
+    }
+  ],
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "file": ".copilot-commit-message-instructions.md"
