@@ -13,11 +13,11 @@ TagManager:
   - Player
   - Water
   - UI
+  - Minimap
   - Wall
+  - Enemy
   - Bomb
-  - 
-  - 
-  - 
+  - DestructibleObject
   - 
   - 
   - 

@@ -1,12 +1,14 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using UnityEngine.EventSystems;
 
 public class PlayerFire : MonoBehaviour
 {
     #region Fields
     [Header("발사 설정")]
     [SerializeField] private GameObject _firePosition;
+    [SerializeField] private int _bulletDamage = 10; // 총알 피해량
     [SerializeField] private ParticleSystem _bulletEffectPrefab;
     [SerializeField] private float _bulletEffectDuration = 1.5f; // 총알 이펙트 지속 시간
     [SerializeField] private int _bulletEffectPoolSize = 10;     // 총알 이펙트 풀 초기 크기
@@ -187,15 +189,31 @@ public class PlayerFire : MonoBehaviour
 
     private void HandleGunFire()
     {
-        // 왼쪽 버튼 입력 받기
-        if (Input.GetMouseButtonDown(0))
+        bool isButtonDown = Input.GetMouseButtonDown(0);
+        bool isButtonUp = Input.GetMouseButtonUp(0);
+        bool isButtonHeld = Input.GetMouseButton(0); // 버튼 누르고 있는지 확인 추가
+
+        // 왼쪽 버튼을 처음 눌렀을 때
+        if (isButtonDown)
         {
+            // 마우스 포인터가 UI 요소 위에 있는지 확인
+            if (EventSystem.current.IsPointerOverGameObject())
+            {
+                // UI 요소 위에서 클릭된 경우, 발사 로직을 실행하지 않고 함수 종료
+                return;
+            }
+
             _isFiring = true;
-            Fire();
+            // 첫 발사 시도 (발사 속도 체크)
+            if (Time.time >= _nextFireTime)
+            {
+                Fire();
+            }
         }
 
         // 버튼을 계속 누르고 있는 경우 연사 처리
-        if (Input.GetMouseButton(0) && _isFiring)
+        // isButtonDown 대신 isButtonHeld 사용
+        if (_isFiring && isButtonHeld)
         {
             // 현재 시간이 다음 발사 가능 시간을 넘었는지 확인
             if (Time.time >= _nextFireTime)
@@ -205,7 +223,7 @@ public class PlayerFire : MonoBehaviour
         }
 
         // 버튼을 떼면 연사 중지
-        if (Input.GetMouseButtonUp(0))
+        if (isButtonUp)
         {
             _isFiring = false;
         }
@@ -245,16 +263,16 @@ public class PlayerFire : MonoBehaviour
             // 피격 이펙트 생성(표시) - 오브젝트 풀링 사용
             CreateBulletHitEffect(hitInfo.point, hitInfo.normal);
 
-            if (hitInfo.collider.CompareTag("Enemy"))
+            // IDamageable 인터페이스를 가진 컴포넌트를 찾아서 피해를 줍니다.
+            IDamageable damageable = hitInfo.collider.GetComponent<IDamageable>();
+            if (damageable != null)
             {
-                Enemy enemy = hitInfo.collider.GetComponent<Enemy>();
-                if (enemy != null)
+                Damage damage = new()
                 {
-                    Damage damage = new Damage();
-                    damage.Value = 10;
-                    damage.From = gameObject;
-                    enemy.TakeDamage(damage);
-                }
+                    Value = _bulletDamage,
+                    From = gameObject
+                };
+                damageable.TakeDamage(damage);
             }
         }
 

@@ -31,7 +31,7 @@ public class ObjectPoolManager : MonoBehaviour
 
     [Header("기본 풀 크기")]
     [SerializeField] private int _defaultPoolSize = 10;
-    
+
     // 모든 풀의 부모 객체
     private Transform _poolRoot;
     #endregion
@@ -44,10 +44,10 @@ public class ObjectPoolManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-        
+
         _instance = this;
         DontDestroyOnLoad(gameObject);
-        
+
         // 풀의 루트 객체 생성
         _poolRoot = new GameObject("PoolRoot").transform;
         _poolRoot.parent = transform;
@@ -63,7 +63,7 @@ public class ObjectPoolManager : MonoBehaviour
     public void InitializePool(GameObject prefab, int size = 0)
     {
         string prefabName = prefab.name;
-        
+
         if (_poolDictionary.ContainsKey(prefabName))
         {
             Debug.LogWarning($"이미 {prefabName} 풀이 초기화되어 있습니다.");
@@ -76,7 +76,7 @@ public class ObjectPoolManager : MonoBehaviour
         Transform poolParent = new GameObject($"Pool_{prefabName}").transform;
         poolParent.parent = _poolRoot;
         _poolParentDictionary[prefabName] = poolParent;
-        
+
         _poolDictionary[prefabName] = new Queue<GameObject>();
         _prefabDictionary[prefabName] = prefab;
 
@@ -110,7 +110,7 @@ public class ObjectPoolManager : MonoBehaviour
         // 풀에서 오브젝트 꺼내기
         GameObject obj = _poolDictionary[prefabName].Dequeue();
         obj.SetActive(true);
-        
+
         return obj;
     }
 
@@ -121,7 +121,7 @@ public class ObjectPoolManager : MonoBehaviour
     public void ReturnToPool(GameObject obj)
     {
         string prefabName = obj.name.Replace("(Clone)", "");
-        
+
         // 풀이 초기화되지 않았다면 파괴
         if (!_poolDictionary.ContainsKey(prefabName))
         {
@@ -133,14 +133,14 @@ public class ObjectPoolManager : MonoBehaviour
         // 오브젝트 비활성화 및 풀의 부모 아래로 이동
         obj.SetActive(false);
         obj.transform.parent = _poolParentDictionary[prefabName];
-        
+
         // 기본 상태로 초기화 (위치, 회전, 속도 등)
-        if (obj.TryGetComponent<Rigidbody>(out Rigidbody rb))
+        if (obj.TryGetComponent<Rigidbody>(out Rigidbody rigidbody))
         {
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
+            rigidbody.linearVelocity = Vector3.zero;
+            rigidbody.angularVelocity = Vector3.zero;
         }
-        
+
         // 풀에 반환
         _poolDictionary[prefabName].Enqueue(obj);
     }
@@ -160,7 +160,7 @@ public class ObjectPoolManager : MonoBehaviour
         GameObject newObj = Instantiate(prefab, parent);
         newObj.name = prefab.name; // (Clone) 접미사 제거
         newObj.SetActive(false);
-        
+
         _poolDictionary[prefabName].Enqueue(newObj);
         return newObj;
     }
