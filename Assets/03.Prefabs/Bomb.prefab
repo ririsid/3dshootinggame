@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 8063040050388132055}
   - component: {fileID: 5386496213364822986}
   - component: {fileID: 2872829549350698037}
-  m_Layer: 7
+  m_Layer: 9
   m_Name: Bomb
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -150,5 +150,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _explosionEffectPrefab: {fileID: 1694103830399813667, guid: 3dedd9e2e7172514ba11779a9aa413b3, type: 3}
-  _explosionDelay: 5
   _explosionEffectDuration: 2
+  _explosionRadius: 5
+  _explosionDamage: 50
+  _damageableLayerMask:
+    serializedVersion: 2
+    m_Bits: 1280

@@ -4,35 +4,41 @@ using UnityEngine.AI;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(EnemyPatrol))]
-public class Enemy : MonoBehaviour
+public class Enemy : MonoBehaviour, IDamageable
 {
     #region Enums
+    /// <summary>
+    /// 적의 상태를 나타내는 열거형입니다.
+    /// </summary>
     public enum EnemyState
     {
-        Idle,
-        Patrol,
-        Trace,
-        Return,
-        Attack,
-        Damaged,
-        Die,
+        Idle,    // 대기
+        Patrol,  // 순찰
+        Trace,   // 추적
+        Return,  // 복귀
+        Attack,  // 공격
+        Damaged, // 피격
+        Die,     // 사망
     }
     #endregion
 
     #region State Variables
-    [Header("State")]
-    [SerializeField] private EnemyState _currentState = EnemyState.Idle;
+    [Header("상태")]
+    [SerializeField] private EnemyState _currentState = EnemyState.Idle; // 현재 적의 상태
+    /// <summary>
+    /// 현재 적의 상태입니다. 상태 변경 시 관련 로직을 처리합니다.
+    /// </summary>
     public EnemyState CurrentState
     {
         get => _currentState;
         private set
         {
-            if (_currentState == value) return;
+            if (_currentState == value) return; // 상태가 같으면 변경하지 않음
 
-            Debug.Log($"Enemy State Changed: {_currentState} -> {value}");
-            OnStateExit(_currentState);
-            _currentState = value;
-            OnStateEnter(_currentState);
+            Debug.Log($"적 상태 변경: {_currentState} -> {value}");
+            OnStateExit(_currentState); // 이전 상태 종료 처리
+            _currentState = value;      // 상태 변경
+            OnStateEnter(_currentState); // 새 상태 진입 처리
         }
     }
     [SerializeField] private float _idleDuration = 3f;
@@ -402,7 +408,6 @@ public class Enemy : MonoBehaviour
         // 넉백 방향 계산 (데미지 발생 위치로부터 멀어지는 방향)
         _knockbackDirection = (transform.position - damage.From.transform.position).normalized;
         _knockbackDirection.y = 0; // 넉백을 수평으로 유지
-
 
         if (_currentHealth <= 0)
         {

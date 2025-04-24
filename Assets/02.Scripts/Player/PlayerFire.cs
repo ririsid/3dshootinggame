@@ -8,6 +8,7 @@ public class PlayerFire : MonoBehaviour
     #region Fields
     [Header("발사 설정")]
     [SerializeField] private GameObject _firePosition;
+    [SerializeField] private int _bulletDamage = 10; // 총알 피해량
     [SerializeField] private ParticleSystem _bulletEffectPrefab;
     [SerializeField] private float _bulletEffectDuration = 1.5f; // 총알 이펙트 지속 시간
     [SerializeField] private int _bulletEffectPoolSize = 10;     // 총알 이펙트 풀 초기 크기
@@ -62,7 +63,7 @@ public class PlayerFire : MonoBehaviour
 
     private void Start()
     {
-        // Cursor.lockState = CursorLockMode.Locked;
+        Cursor.lockState = CursorLockMode.Locked;
 
         // 오브젝트 풀 초기화
         InitializeBombPool();
@@ -262,16 +263,16 @@ public class PlayerFire : MonoBehaviour
             // 피격 이펙트 생성(표시) - 오브젝트 풀링 사용
             CreateBulletHitEffect(hitInfo.point, hitInfo.normal);
 
-            if (hitInfo.collider.CompareTag("Enemy"))
+            // IDamageable 인터페이스를 가진 컴포넌트를 찾아서 피해를 줍니다.
+            IDamageable damageable = hitInfo.collider.GetComponent<IDamageable>();
+            if (damageable != null)
             {
-                Enemy enemy = hitInfo.collider.GetComponent<Enemy>();
-                if (enemy != null)
+                Damage damage = new()
                 {
-                    Damage damage = new Damage();
-                    damage.Value = 10;
-                    damage.From = gameObject;
-                    enemy.TakeDamage(damage);
-                }
+                    Value = _bulletDamage,
+                    From = gameObject
+                };
+                damageable.TakeDamage(damage);
             }
         }
 
