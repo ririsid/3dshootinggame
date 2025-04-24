@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(EnemyPatrol))]
@@ -40,6 +41,7 @@ public class Enemy : MonoBehaviour
     #region References
     private GameObject _player;
     private CharacterController _characterController;
+    private NavMeshAgent _agent;
     private EnemyPatrol _enemyPatrol;
     #endregion
 
@@ -82,6 +84,10 @@ public class Enemy : MonoBehaviour
     {
         _characterController = GetComponent<CharacterController>();
         _enemyPatrol = GetComponent<EnemyPatrol>();
+
+        _agent = GetComponent<NavMeshAgent>();
+        _agent.speed = _traceSpeed;
+        _agent.angularSpeed = _rotationSpeed;
 
         _startPosition = transform.position;
         _startRotation = transform.rotation;
@@ -265,20 +271,22 @@ public class Enemy : MonoBehaviour
     {
         while (CurrentState == EnemyState.Trace && _player != null)
         {
-            Vector3 direction = (_player.transform.position - transform.position);
-            direction.y = 0;
+            // Vector3 direction = (_player.transform.position - transform.position);
+            // direction.y = 0;
 
-            if (direction.magnitude > _characterController.radius)
-            {
-                if (direction != Vector3.zero)
-                {
-                    Quaternion targetRotation = Quaternion.LookRotation(direction);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
-                }
+            // if (direction.magnitude > _characterController.radius)
+            // {
+            //     if (direction != Vector3.zero)
+            //     {
+            //         Quaternion targetRotation = Quaternion.LookRotation(direction);
+            //         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
+            //     }
 
-                Vector3 move = direction.normalized * _traceSpeed * Time.deltaTime;
-                _characterController.Move(move + Physics.gravity * Time.deltaTime);
-            }
+            //     Vector3 move = direction.normalized * _traceSpeed * Time.deltaTime;
+            //     _characterController.Move(move + Physics.gravity * Time.deltaTime);
+            // }
+            _agent.speed = _traceSpeed;
+            _agent.SetDestination(_player.transform.position);
 
             yield return null;
         }
@@ -288,17 +296,19 @@ public class Enemy : MonoBehaviour
     {
         while (CurrentState == EnemyState.Return)
         {
-            Vector3 direction = (_startPosition - transform.position);
-            direction.y = 0;
+            // Vector3 direction = (_startPosition - transform.position);
+            // direction.y = 0;
 
-            if (direction != Vector3.zero)
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
-            }
+            // if (direction != Vector3.zero)
+            // {
+            //     Quaternion targetRotation = Quaternion.LookRotation(direction);
+            //     transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
+            // }
 
-            Vector3 move = direction.normalized * _returnSpeed * Time.deltaTime;
-            _characterController.Move(move + Physics.gravity * Time.deltaTime);
+            // Vector3 move = direction.normalized * _returnSpeed * Time.deltaTime;
+            // _characterController.Move(move + Physics.gravity * Time.deltaTime);
+            _agent.speed = _returnSpeed;
+            _agent.SetDestination(_startPosition);
 
             yield return null;
         }
@@ -339,11 +349,13 @@ public class Enemy : MonoBehaviour
         {
             if (_characterController.enabled && !_isDead) // 컨트롤러가 활성화되어 있고 적이 죽지 않았는지 확인
             {
+                _agent.isStopped = true; // 이동 중지
                 // 넉백 힘 + 중력 적용
                 Vector3 move = _knockbackDirection * _knockbackForce * Time.deltaTime + Physics.gravity * Time.deltaTime;
                 _characterController.Move(move);
             }
             timer += Time.deltaTime;
+            _agent.isStopped = false; // 이동 재개
             yield return null;
         }
 
@@ -351,6 +363,8 @@ public class Enemy : MonoBehaviour
         float remainingDuration = _damagedDuration - _knockbackDuration;
         if (remainingDuration > 0)
         {
+            _agent.isStopped = true; // 이동 중지
+            _agent.ResetPath(); // 경로 초기화
             yield return new WaitForSeconds(remainingDuration);
         }
 
