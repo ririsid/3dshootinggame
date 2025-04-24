@@ -59,8 +59,14 @@ public class Enemy : MonoBehaviour
     private float _attackCooldownTimer = 0f;
     [SerializeField] private int _maxHealth = 100;
     private int _currentHealth;
-    [SerializeField] private float _damagedDuration = 0.5f;
+    [SerializeField] private float _damagedDuration = 0.5f; // 피격 시 경직 시간
     [SerializeField] private float _deathDuration = 1f;
+    #endregion
+
+    #region Knockback Settings
+    [Header("Knockback")]
+    [SerializeField] private float _knockbackForce = 5f;
+    [SerializeField] private float _knockbackDuration = 0.2f; // _damagedDuration보다 짧아야 함
     #endregion
 
     #region Private Variables
@@ -68,6 +74,7 @@ public class Enemy : MonoBehaviour
     private Quaternion _startRotation;
     private Coroutine _stateCoroutine;
     private bool _isDead = false;
+    private Vector3 _knockbackDirection; // 넉백 방향 저장
     #endregion
 
     #region Unity Event Functions
@@ -326,10 +333,30 @@ public class Enemy : MonoBehaviour
 
     private IEnumerator Damaged_Coroutine()
     {
-        yield return new WaitForSeconds(_damagedDuration);
+        float timer = 0f;
+        // _knockbackDuration 동안 넉백 적용
+        while (timer < _knockbackDuration)
+        {
+            if (_characterController.enabled && !_isDead) // 컨트롤러가 활성화되어 있고 적이 죽지 않았는지 확인
+            {
+                // 넉백 힘 + 중력 적용
+                Vector3 move = _knockbackDirection * _knockbackForce * Time.deltaTime + Physics.gravity * Time.deltaTime;
+                _characterController.Move(move);
+            }
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        // 남은 피격 지속 시간 동안 대기
+        float remainingDuration = _damagedDuration - _knockbackDuration;
+        if (remainingDuration > 0)
+        {
+            yield return new WaitForSeconds(remainingDuration);
+        }
 
         if (CurrentState == EnemyState.Damaged && !_isDead)
         {
+            // 넉백 및 대기 후, 추적 상태로 전환될 가능성이 높음
             CurrentState = EnemyState.Trace;
         }
     }
@@ -348,15 +375,20 @@ public class Enemy : MonoBehaviour
 
     #region Public Methods
     /// <summary>
-    /// 적에게 데미지를 적용합니다.
+    /// 적에게 데미지를 적용하고 넉백 효과를 발생시킵니다.
     /// </summary>
-    /// <param name="damage">입힐 데미지 양</param>
+    /// <param name="damage">입힐 데미지 정보 (From: 데미지 발생 위치)</param>
     public void TakeDamage(Damage damage)
     {
         if (_isDead || CurrentState == EnemyState.Damaged) return;
 
         _currentHealth -= damage.Value;
         Debug.Log($"Enemy Hit! Health: {_currentHealth}/{_maxHealth}");
+
+        // 넉백 방향 계산 (데미지 발생 위치로부터 멀어지는 방향)
+        _knockbackDirection = (transform.position - damage.From.transform.position).normalized;
+        _knockbackDirection.y = 0; // 넉백을 수평으로 유지
+
 
         if (_currentHealth <= 0)
         {
@@ -365,7 +397,7 @@ public class Enemy : MonoBehaviour
         }
         else
         {
-            CurrentState = EnemyState.Damaged;
+            CurrentState = EnemyState.Damaged; // 넉백을 적용하기 위해 Damaged 상태로 진입
         }
     }
     #endregion
