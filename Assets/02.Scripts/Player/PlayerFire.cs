@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using UnityEngine.EventSystems;
 
 public class PlayerFire : MonoBehaviour
 {
@@ -61,7 +62,7 @@ public class PlayerFire : MonoBehaviour
 
     private void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
+        // Cursor.lockState = CursorLockMode.Locked;
 
         // 오브젝트 풀 초기화
         InitializeBombPool();
@@ -187,15 +188,31 @@ public class PlayerFire : MonoBehaviour
 
     private void HandleGunFire()
     {
-        // 왼쪽 버튼 입력 받기
-        if (Input.GetMouseButtonDown(0))
+        bool isButtonDown = Input.GetMouseButtonDown(0);
+        bool isButtonUp = Input.GetMouseButtonUp(0);
+        bool isButtonHeld = Input.GetMouseButton(0); // 버튼 누르고 있는지 확인 추가
+
+        // 왼쪽 버튼을 처음 눌렀을 때
+        if (isButtonDown)
         {
+            // 마우스 포인터가 UI 요소 위에 있는지 확인
+            if (EventSystem.current.IsPointerOverGameObject())
+            {
+                // UI 요소 위에서 클릭된 경우, 발사 로직을 실행하지 않고 함수 종료
+                return;
+            }
+
             _isFiring = true;
-            Fire();
+            // 첫 발사 시도 (발사 속도 체크)
+            if (Time.time >= _nextFireTime)
+            {
+                Fire();
+            }
         }
 
         // 버튼을 계속 누르고 있는 경우 연사 처리
-        if (Input.GetMouseButton(0) && _isFiring)
+        // isButtonDown 대신 isButtonHeld 사용
+        if (_isFiring && isButtonHeld)
         {
             // 현재 시간이 다음 발사 가능 시간을 넘었는지 확인
             if (Time.time >= _nextFireTime)
@@ -205,7 +222,7 @@ public class PlayerFire : MonoBehaviour
         }
 
         // 버튼을 떼면 연사 중지
-        if (Input.GetMouseButtonUp(0))
+        if (isButtonUp)
         {
             _isFiring = false;
         }

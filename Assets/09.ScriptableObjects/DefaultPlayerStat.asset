@@ -19,8 +19,7 @@ MonoBehaviour:
   walkSpeed: 7
   runSpeed: 12
   moveInputThreshold: 0.1
-  diagonalMovementNormalizeThreshold: 1
-  jumpPower: 5
+  jumpPower: 4
   maxJumpCount: 2
   rollSpeed: 15
   rollDuration: 0.5
@@ -38,3 +37,11 @@ MonoBehaviour:
   minWallNormalY: 0.7
   wallInputThreshold: 0.1
   wallMaxDistance: 1.5
+  maxBombCount: 3
+  bombThrowPower: 15
+  bombThrowMaxPower: 30
+  bombChargingSpeed: 10
+  bombMaxChargeTime: 2
+  fireRate: 0.15
+  maxAmmo: 50
+  reloadTime: 2
