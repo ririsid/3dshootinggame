@@ -59,6 +59,8 @@ public class Enemy : MonoBehaviour, IDamageable
     [SerializeField] private float _traceSpeed = 5f;
     [SerializeField] private float _returnSpeed = 4f;
     [SerializeField] private float _rotationSpeed = 10f;
+    [SerializeField] private float _maxTraceDuration = 15f;
+    [SerializeField] private float _maxReturnDuration = 20f;
     #endregion
 
     #region Combat Settings
@@ -275,24 +277,34 @@ public class Enemy : MonoBehaviour, IDamageable
 
     private IEnumerator Trace_Coroutine()
     {
+        float traceTimer = 0f; // 추적 시간 타이머
+        _agent.speed = _traceSpeed; // 에이전트 속도 설정
+
         while (CurrentState == EnemyState.Trace && _player != null)
         {
-            // Vector3 direction = (_player.transform.position - transform.position);
-            // direction.y = 0;
+            traceTimer += Time.deltaTime; // 타이머 증가
 
-            // if (direction.magnitude > _characterController.radius)
-            // {
-            //     if (direction != Vector3.zero)
-            //     {
-            //         Quaternion targetRotation = Quaternion.LookRotation(direction);
-            //         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
-            //     }
+            // 최대 추적 시간 초과 시 Return 상태로 전환
+            // 잠재적인 무한 루프 방지
+            if (traceTimer > _maxTraceDuration)
+            {
+                Debug.LogWarning($"최대 추적 시간({_maxTraceDuration}초) 초과. Return 상태로 전환합니다.");
+                CurrentState = EnemyState.Return;
+                yield break; // 코루틴 종료
+            }
 
-            //     Vector3 move = direction.normalized * _traceSpeed * Time.deltaTime;
-            //     _characterController.Move(move + Physics.gravity * Time.deltaTime);
-            // }
-            _agent.speed = _traceSpeed;
-            _agent.SetDestination(_player.transform.position);
+            // 플레이어 위치로 이동 설정 (NavMeshAgent 사용)
+            if (_agent.isOnNavMesh && _agent.enabled) // 에이전트가 활성화되어 있고 NavMesh 위에 있는지 확인
+            {
+                _agent.SetDestination(_player.transform.position);
+            }
+            else if (!_agent.isOnNavMesh)
+            {
+                Debug.LogWarning("Enemy가 NavMesh 위에 없습니다. 추적을 중단하고 Return 상태로 전환합니다.");
+                CurrentState = EnemyState.Return;
+                yield break;
+            }
+
 
             yield return null;
         }
@@ -300,28 +312,43 @@ public class Enemy : MonoBehaviour, IDamageable
 
     private IEnumerator Return_Coroutine()
     {
+        float returnTimer = 0f; // 복귀 시간 타이머
+        _agent.speed = _returnSpeed;
+        _agent.SetDestination(_startPosition);
+
         while (CurrentState == EnemyState.Return)
         {
-            // Vector3 direction = (_startPosition - transform.position);
-            // direction.y = 0;
+            returnTimer += Time.deltaTime; // 타이머 증가
 
-            // if (direction != Vector3.zero)
-            // {
-            //     Quaternion targetRotation = Quaternion.LookRotation(direction);
-            //     transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
-            // }
+            // 최대 복귀 시간 초과 시 안전 장치 발동
+            if (returnTimer > _maxReturnDuration)
+            {
+                Debug.LogWarning($"최대 복귀 시간({_maxReturnDuration}초) 초과. 강제로 시작 위치로 이동합니다.");
+                _agent.isStopped = true; // 에이전트 정지
+                _agent.ResetPath();      // 경로 초기화
+                transform.position = _startPosition; // 위치 강제 설정
+                transform.rotation = _startRotation; // 회전 강제 설정
+                CurrentState = EnemyState.Idle; // Idle 상태로 전환
+                yield break; // 코루틴 종료
+            }
 
-            // Vector3 move = direction.normalized * _returnSpeed * Time.deltaTime;
-            // _characterController.Move(move + Physics.gravity * Time.deltaTime);
-            _agent.speed = _returnSpeed;
-            _agent.SetDestination(_startPosition);
+            // 목표 지점 도달 여부 확인 (NavMeshAgent의 remainingDistance 사용)
+            if (_agent.isOnNavMesh && _agent.enabled && !_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
+            {
+                // 목적지에 도달했거나 더 이상 이동할 수 없을 때
+                if (!_agent.hasPath || _agent.velocity.sqrMagnitude == 0f)
+                {
+                    // 실제 목적지에 도달했는지 추가 확인 (선택 사항)
+                    if (Vector3.Distance(transform.position, _startPosition) <= _agent.stoppingDistance + 0.1f) // 약간의 오차 허용
+                    {
+                        CurrentState = EnemyState.Idle; // Idle 상태로 전환
+                        yield break; // 코루틴 종료
+                    }
+                }
+            }
+
 
             yield return null;
-        }
-        if (CurrentState != EnemyState.Trace)
-        {
-            transform.position = _startPosition;
-            transform.rotation = _startRotation;
         }
     }
 
