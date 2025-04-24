@@ -93,7 +93,7 @@ public class PlayerInputHandler : MonoBehaviour
     {
         // 벽 오르기 중 대각선 이동 지원
         Vector3 verticalMovement = Vector3.up * _verticalInput;
-        Vector3 horizontalMovement = rightVector * _horizontalInput; // 우측 벡터를 기준으로 수평 이동 계산
+        Vector3 horizontalMovement = transform.TransformDirection(rightVector * _horizontalInput); // 우측 벡터를 기준으로 수평 이동 계산
 
         // 대각선 이동을 위한 벡터 합산
         Vector3 direction = verticalMovement + horizontalMovement;

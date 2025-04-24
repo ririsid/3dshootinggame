@@ -58,22 +58,22 @@ public class PlayerStat : MonoBehaviour
         if (verticalInput > wallInputThreshold)
         {
             // 상승 (최대 소모율)
-            return _playerStatData.wallClimbStaminaUseRate;
+            return _playerStatData.wallClimbStaminaUseRate * Time.deltaTime;
         }
         else if (verticalInput < -wallInputThreshold)
         {
             // 하강 (오르기보다 적게)
-            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallDescendStaminaFactor;
+            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallDescendStaminaFactor * Time.deltaTime;
         }
         else if (Mathf.Abs(horizontalInput) > wallInputThreshold)
         {
             // 좌우 이동 (오르기보다 적게)
-            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallStrafeStaminaFactor;
+            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallStrafeStaminaFactor * Time.deltaTime;
         }
         else
         {
             // 입력 없음 (가장 적게)
-            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallIdleStaminaFactor;
+            return _playerStatData.wallClimbStaminaUseRate * _playerStatData.wallIdleStaminaFactor * Time.deltaTime;
         }
     }
 

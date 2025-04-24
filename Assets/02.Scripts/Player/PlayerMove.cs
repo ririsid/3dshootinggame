@@ -475,7 +475,7 @@ public class PlayerMove : MonoBehaviour
                 _inputHandler.VerticalInput,
                 _inputHandler.HorizontalInput,
                 _inputHandler.WallInputThreshold);
-            _playerStat.UseStamina(staminaCost * Time.deltaTime);
+            _playerStat.UseStamina(staminaCost);
         }
         else
         {
