@@ -21,10 +21,11 @@ Assets/
 
 아래는 프로젝트에서 사용하는 주요 플러그인 목록입니다. 저장소에 포함되지 않은 플러그인을 설치하려면 각 플러그인의 구매/다운로드 링크를 참조하세요. (Unity 내장 패키지는 이 목록에서 제외되었습니다.)
 
-| 플러그인 이름 | 버전    | 라이선스 | 용도               | 설치 경로                        | 구매/다운로드 링크                                                                                 |
-| ------------- | ------- | -------- | ------------------ | -------------------------------- | -------------------------------------------------------------------------------------------------- |
-| DOTween       | 1.2.705 | 무료     | 애니메이션 트윈    | Assets/Plugins/Demigiant/        | [Asset Store 링크](https://assetstore.unity.com/packages/tools/animation/dotween-hotween-v2-27676) |
-| War FX        | 1.8.5   | 무료     | 전투 이펙트 시스템 | Assets/Plugins/JMO Assets/WarFX/ | [Asset Store 링크](https://assetstore.unity.com/packages/vfx/particles/war-fx-5669)                |
+| 플러그인 이름       | 버전    | 라이선스   | 용도               | 설치 경로                        | 구매/다운로드 링크                                                                                 |
+| ------------------- | ------- | ---------- | ------------------ | -------------------------------- | -------------------------------------------------------------------------------------------------- |
+| DOTween             | 1.2.765 | 무료       | 애니메이션 트윈    | Assets/Plugins/Demigiant/        | [Asset Store 링크](https://assetstore.unity.com/packages/tools/animation/dotween-hotween-v2-27676) |
+| War FX              | 1.8.04  | 무료       | 전투 이펙트 시스템 | Assets/Plugins/JMO Assets/WarFX/ | [Asset Store 링크](https://assetstore.unity.com/packages/vfx/particles/war-fx-5669)                |
+| Material-Icons Font | 1.0.1   | Apache 2.0 | UI 아이콘 폰트     | Unity Package Manager (OpenUPM)  | [OpenUPM 링크](https://openupm.com/packages/com.fonts.material-icons/)                             |
 
 ## 설치 지침
 
@@ -51,6 +52,15 @@ Assets/
    - 이 프로젝트는 TextMeshPro, Cinemachine 등의 Unity 내장 패키지를 사용합니다.
    - 이러한 패키지는 Window > Package Manager에서 "Unity Registry"를 선택하여 설치할 수 있습니다.
    - 각 패키지를 검색하고 "Install" 버튼을 클릭하세요.
+
+5. **OpenUPM 패키지**:
+   - 이 프로젝트는 OpenUPM을 통해 패키지를 관리할 수 있습니다.
+   - `Material-Icons Font` 패키지는 다음 명령어를 사용하여 설치할 수 있습니다 (프로젝트 루트 디렉토리에서 실행):
+     ```bash
+     openupm add com.fonts.material-icons
+     ```
+   - 또는 Unity Package Manager의 Git URL 기능을 사용하여 설치할 수도 있습니다.
+   - OpenUPM 설정 및 사용법은 [OpenUPM 문서](https://openupm.com/)를 참조하세요.
 
 ## 라이선스 정보
 
