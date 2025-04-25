@@ -17,7 +17,6 @@ public class Enemy : MonoBehaviour, IDamageable
         Trace,   // 추적
         Return,  // 복귀
         Attack,  // 공격
-        Damaged, // 피격
         Die,     // 사망
     }
     #endregion
@@ -85,6 +84,8 @@ public class Enemy : MonoBehaviour, IDamageable
     private Coroutine _stateCoroutine;
     private bool _isDead = false;
     private Vector3 _knockbackDirection; // 넉백 방향 저장
+    private bool _isDamaged = false; // 피격 상태 플래그
+    private Coroutine _damageCoroutine; // 피격 처리 코루틴
     #endregion
 
     #region Unity 이벤트 함수
@@ -149,7 +150,6 @@ public class Enemy : MonoBehaviour, IDamageable
             case EnemyState.Return:
                 CheckReturnTransitions(distanceToPlayer, distanceToStart);
                 break;
-            case EnemyState.Damaged:
             case EnemyState.Die:
                 break;
         }
@@ -234,9 +234,6 @@ public class Enemy : MonoBehaviour, IDamageable
                 _attackCooldownTimer = _attackCooldown;
                 _stateCoroutine = StartCoroutine(Attack_Coroutine());
                 break;
-            case EnemyState.Damaged:
-                _stateCoroutine = StartCoroutine(Damaged_Coroutine());
-                break;
             case EnemyState.Die:
                 _stateCoroutine = StartCoroutine(Die_Coroutine());
                 break;
@@ -293,18 +290,21 @@ public class Enemy : MonoBehaviour, IDamageable
                 yield break; // 코루틴 종료
             }
 
-            // 플레이어 위치로 이동 설정 (NavMeshAgent 사용)
-            if (_agent.isOnNavMesh && _agent.enabled) // 에이전트가 활성화되어 있고 NavMesh 위에 있는지 확인
+            // 유틸리티 메서드를 사용하여 NavMeshAgent 상태 확인 및 이동 처리
+            if (NavMeshUtility.IsAgentValid(_agent))
             {
-                _agent.SetDestination(_player.transform.position);
+                // 플레이어 위치로 이동 설정
+                NavMeshUtility.TrySetDestination(_agent, _player.transform.position);
+
+                // 이동 방향으로 회전
+                RotateToMoveDirection();
             }
-            else if (!_agent.isOnNavMesh)
+            else
             {
                 Debug.LogWarning("Enemy가 NavMesh 위에 없습니다. 추적을 중단하고 Return 상태로 전환합니다.");
                 CurrentState = EnemyState.Return;
                 yield break;
             }
-
 
             yield return null;
         }
@@ -314,7 +314,7 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         float returnTimer = 0f; // 복귀 시간 타이머
         _agent.speed = _returnSpeed;
-        _agent.SetDestination(_startPosition);
+        NavMeshUtility.TrySetDestination(_agent, _startPosition);
 
         while (CurrentState == EnemyState.Return)
         {
@@ -332,21 +332,15 @@ public class Enemy : MonoBehaviour, IDamageable
                 yield break; // 코루틴 종료
             }
 
-            // 목표 지점 도달 여부 확인 (NavMeshAgent의 remainingDistance 사용)
-            if (_agent.isOnNavMesh && _agent.enabled && !_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance)
-            {
-                // 목적지에 도달했거나 더 이상 이동할 수 없을 때
-                if (!_agent.hasPath || _agent.velocity.sqrMagnitude == 0f)
-                {
-                    // 실제 목적지에 도달했는지 추가 확인 (선택 사항)
-                    if (Vector3.Distance(transform.position, _startPosition) <= _agent.stoppingDistance + 0.1f) // 약간의 오차 허용
-                    {
-                        CurrentState = EnemyState.Idle; // Idle 상태로 전환
-                        yield break; // 코루틴 종료
-                    }
-                }
-            }
+            // 이동 방향으로 회전
+            RotateToMoveDirection();
 
+            // 유틸리티 메서드를 사용하여 목적지 도달 여부 확인
+            if (NavMeshUtility.HasReachedDestination(_agent, _startPosition, _agent.stoppingDistance))
+            {
+                CurrentState = EnemyState.Idle; // Idle 상태로 전환
+                yield break; // 코루틴 종료
+            }
 
             yield return null;
         }
@@ -356,13 +350,8 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         while (CurrentState == EnemyState.Attack && _player != null)
         {
-            Vector3 direction = (_player.transform.position - transform.position);
-            direction.y = 0;
-            if (direction != Vector3.zero)
-            {
-                Quaternion targetRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
-            }
+            // 타겟 방향으로 회전
+            RotateToTarget(_player.transform.position);
 
             if (_attackCooldownTimer >= _attackCooldown)
             {
@@ -371,40 +360,6 @@ public class Enemy : MonoBehaviour, IDamageable
             }
 
             yield return null;
-        }
-    }
-
-    private IEnumerator Damaged_Coroutine()
-    {
-        float timer = 0f;
-        // _knockbackDuration 동안 넉백 적용
-        while (timer < _knockbackDuration)
-        {
-            if (_characterController.enabled && !_isDead) // 컨트롤러가 활성화되어 있고 적이 죽지 않았는지 확인
-            {
-                _agent.isStopped = true; // 이동 중지
-                // 넉백 힘 + 중력 적용
-                Vector3 move = _knockbackDirection * _knockbackForce * Time.deltaTime + Physics.gravity * Time.deltaTime;
-                _characterController.Move(move);
-            }
-            timer += Time.deltaTime;
-            _agent.isStopped = false; // 이동 재개
-            yield return null;
-        }
-
-        // 남은 피격 지속 시간 동안 대기
-        float remainingDuration = _damagedDuration - _knockbackDuration;
-        if (remainingDuration > 0)
-        {
-            _agent.isStopped = true; // 이동 중지
-            _agent.ResetPath(); // 경로 초기화
-            yield return new WaitForSeconds(remainingDuration);
-        }
-
-        if (CurrentState == EnemyState.Damaged && !_isDead)
-        {
-            // 넉백 및 대기 후, 추적 상태로 전환될 가능성이 높음
-            CurrentState = EnemyState.Trace;
         }
     }
 
@@ -427,7 +382,7 @@ public class Enemy : MonoBehaviour, IDamageable
     /// <param name="damage">입힐 데미지 정보 (From: 데미지 발생 위치)</param>
     public void TakeDamage(Damage damage)
     {
-        if (_isDead || CurrentState == EnemyState.Damaged) return;
+        if (_isDead || _isDamaged) return; // 이미 피격 상태거나 죽은 상태면 무시
 
         _currentHealth -= damage.Value;
         Debug.Log($"적 피격! 체력: {_currentHealth}/{_maxHealth}");
@@ -443,7 +398,113 @@ public class Enemy : MonoBehaviour, IDamageable
         }
         else
         {
-            CurrentState = EnemyState.Damaged; // 넉백을 적용하기 위해 Damaged 상태로 진입
+            // 피격 처리를 현재 상태와 별개로 처리
+            if (_damageCoroutine != null)
+            {
+                StopCoroutine(_damageCoroutine);
+            }
+            _damageCoroutine = StartCoroutine(ApplyDamageEffect());
+        }
+    }
+
+    /// <summary>
+    /// 피격 효과(넉백, 경직)를 적용하는 코루틴입니다.
+    /// </summary>
+    private IEnumerator ApplyDamageEffect()
+    {
+        _isDamaged = true; // 피격 상태 설정
+
+        // 현재 에이전트 상태 백업
+        bool wasAgentStopped = _agent.isStopped;
+
+        // 피격 방향으로 즉시 회전
+        if (_knockbackDirection != Vector3.zero)
+        {
+            Vector3 lookDirection = -_knockbackDirection; // 넉백 방향의 반대 = 공격자 방향
+            lookDirection.y = 0; // 수평 방향만 고려
+
+            if (lookDirection != Vector3.zero) // 안전 검사
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+                transform.rotation = targetRotation; // 즉시 회전
+            }
+        }
+
+        float timer = 0f;
+        // _knockbackDuration 동안 넉백 적용
+        while (timer < _knockbackDuration)
+        {
+            if (_characterController.enabled && !_isDead) // 컨트롤러가 활성화되어 있고 적이 죽지 않았는지 확인
+            {
+                _agent.isStopped = true; // 이동 중지
+                // 넉백 힘 + 중력 적용
+                Vector3 move = _knockbackDirection * _knockbackForce * Time.deltaTime + Physics.gravity * Time.deltaTime;
+                _characterController.Move(move);
+            }
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        // 남은 피격 지속 시간 동안 대기
+        float remainingDuration = _damagedDuration - _knockbackDuration;
+        if (remainingDuration > 0)
+        {
+            _agent.isStopped = true; // 이동 중지
+            _agent.ResetPath(); // 경로 초기화
+            yield return new WaitForSeconds(remainingDuration);
+        }
+
+        // 이전 상태로 복원
+        _agent.isStopped = wasAgentStopped;
+
+        if (!_isDead)
+        {
+            // 에이전트가 멈춰있었다면 현재 상태에 따라 목적지 갱신
+            if (CurrentState == EnemyState.Trace && _player != null)
+            {
+                _agent.SetDestination(_player.transform.position);
+            }
+            else if (CurrentState == EnemyState.Return)
+            {
+                _agent.SetDestination(_startPosition);
+            }
+        }
+
+        _isDamaged = false; // 피격 상태 해제
+        _damageCoroutine = null;
+    }
+    #endregion
+
+    #region 헬퍼 메서드
+    /// <summary>
+    /// NavMeshAgent의 이동 방향으로 회전합니다.
+    /// </summary>
+    private void RotateToMoveDirection()
+    {
+        // 피격 상태이거나 유효한 속도가 없으면 회전하지 않음
+        if (_isDamaged || _agent.velocity.magnitude < 0.1f) return;
+
+        Vector3 moveDirection = _agent.velocity.normalized;
+        if (moveDirection != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
+        }
+    }
+
+    /// <summary>
+    /// 지정된 대상 위치를 향해 회전합니다.
+    /// </summary>
+    /// <param name="targetPosition">바라볼 대상 위치</param>
+    private void RotateToTarget(Vector3 targetPosition)
+    {
+        Vector3 direction = (targetPosition - transform.position);
+        direction.y = 0; // 수평 회전만 적용
+
+        if (direction != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
         }
     }
     #endregion
