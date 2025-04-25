@@ -1938,7 +1938,7 @@ Transform:
   m_GameObject: {fileID: 708884567}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 10, y: 1, z: -15}
+  m_LocalPosition: {x: 16, y: 3, z: -15}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4059,6 +4059,9 @@ GameObject:
   - component: {fileID: 1757280326}
   - component: {fileID: 1757280324}
   - component: {fileID: 1757280325}
+  - component: {fileID: 1757280329}
+  - component: {fileID: 1757280328}
+  - component: {fileID: 1757280327}
   m_Layer: 8
   m_Name: Enemy
   m_TagString: Enemy
@@ -4196,22 +4199,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 12b10854a143d8c4c9e0e7d680f0fc06, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _currentState: 0
-  _idleDuration: 3
   _findDistance: 10
   _returnDistance: 10
   _attackDistance: 1.5
+  _viewAngle: 120
   _traceSpeed: 5
   _returnSpeed: 4
   _rotationSpeed: 10
   _maxTraceDuration: 15
   _maxReturnDuration: 20
-  _attackCooldown: 1
-  _maxHealth: 100
-  _damagedDuration: 0.5
-  _deathDuration: 1
-  _knockbackForce: 5
-  _knockbackDuration: 0.2
+  _idleDuration: 3
 --- !u!114 &1757280325
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4230,6 +4227,7 @@ MonoBehaviour:
   - {fileID: 2046076231}
   _waitTime: 2
   _rotationSpeed: 5
+  _stoppingDistance: 0.1
 --- !u!195 &1757280326
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -4252,6 +4250,50 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &1757280327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1757280318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88b4dd561bacbad47819ee89e6b4b57f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _initialState: 0
+--- !u!114 &1757280328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1757280318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb088977ec7a148439def7d3c4b2120e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _knockbackForce: 5
+  _knockbackDuration: 0.2
+  _damagedDuration: 0.5
+  _deathParticle: {fileID: 0}
+  _deathSound: {fileID: 0}
+--- !u!114 &1757280329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1757280318}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 721b5815eae9f33439cc1c8dcea289c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _maxHealth: 100
+  _attackCooldown: 1
 --- !u!1 &1791924459 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8152393052096773302, guid: 720b40141cba56640830e70c22f703d9, type: 3}
@@ -4875,7 +4917,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _firePosition: {fileID: 1140036843}
   _bulletDamage: 10
-  _bulletEffectPrefab: {fileID: 19800002, guid: 54dd9cb5740188a488b8baebbf19207c, type: 3}
+  _bulletEffectPrefab: {fileID: 2256102015677452723, guid: fb1141a5364e4ce48aa2af09175c41cf, type: 3}
   _bulletEffectDuration: 1.5
   _bulletEffectPoolSize: 10
   _bombPrefab: {fileID: 3175025184163702015, guid: 320d9f65c121d524fa1cdba937633c56, type: 3}
@@ -4995,7 +5037,7 @@ Transform:
   m_GameObject: {fileID: 2046076230}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -5}
+  m_LocalPosition: {x: 12, y: 1, z: -5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
