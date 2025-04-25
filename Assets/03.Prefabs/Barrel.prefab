@@ -179,3 +179,6 @@ MonoBehaviour:
     m_Bits: 1280
   _destroyDelay: 2
   _explosionEffectPrefab: {fileID: 100008, guid: 1dbc518224e49f34095aab42fe05751a, type: 3}
+  _ignoreCollisionLayerMask:
+    serializedVersion: 2
+    m_Bits: 776
