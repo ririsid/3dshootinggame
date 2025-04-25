@@ -6,7 +6,7 @@ using TMPro;
 /// </summary>
 public class UI_AmmoComponent : UI_Component, IUIPlayerComponent
 {
-    #region Fields
+    #region 필드
     [Header("UI 참조")]
     [SerializeField] private TextMeshProUGUI _ammoText;
 
@@ -19,7 +19,7 @@ public class UI_AmmoComponent : UI_Component, IUIPlayerComponent
     private PlayerFire _playerFire;
     #endregion
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void Start()
     {
         // PlayerFire 컴포넌트 찾기
@@ -42,7 +42,7 @@ public class UI_AmmoComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region Event Registration
+    #region 이벤트 등록
     protected override void RegisterEvents()
     {
         if (_playerFire != null)
@@ -60,7 +60,7 @@ public class UI_AmmoComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region IUIPlayerComponent Implementation
+    #region IUIPlayerComponent 구현
     /// <summary>
     /// PlayerFire 참조 설정 (IUIPlayerComponent 구현)
     /// </summary>
@@ -100,7 +100,7 @@ public class UI_AmmoComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region Private Methods
+    #region 비공개 메서드
     /// <summary>
     /// 총알 정보 표시 업데이트
     /// </summary>

@@ -9,7 +9,7 @@ using System.Collections;
 /// </summary>
 public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
 {
-    #region Fields
+    #region 필드
     [Header("UI 참조")]
     [SerializeField] private Image _circularProgressImage;
     [SerializeField] private TextMeshProUGUI _reloadTimeText;
@@ -30,7 +30,7 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
     private Coroutine _fadeCoroutine;
     #endregion
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void Awake()
     {
         if (_canvasGroup == null)
@@ -68,7 +68,7 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region Event Registration
+    #region 이벤트 등록
     protected override void RegisterEvents()
     {
         if (_playerFire != null)
@@ -90,7 +90,7 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region IUIPlayerComponent Implementation
+    #region IUIPlayerComponent 구현
     /// <summary>
     /// PlayerStat 참조 설정 (IUIPlayerComponent 구현)
     /// </summary>
@@ -128,7 +128,7 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region Private Methods
+    #region 비공개 메서드
     /// <summary>
     /// 재장전 상태 변경 이벤트 핸들러
     /// </summary>

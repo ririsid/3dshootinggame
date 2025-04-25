@@ -4,16 +4,16 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Camera))]
 public class MinimapCamera : MonoBehaviour
 {
-    [Header("Target Settings")]
+    [Header("타겟 설정")]
     public Transform Target;
     public float YOffset = 10f;
 
-    [Header("Zoom Settings")]
+    [Header("줌 설정")]
     [SerializeField] private float _minZoom = 5f;
     [SerializeField] private float _maxZoom = 15f;
     [SerializeField] private float _zoomStep = 1f;
 
-    [Header("UI Buttons")] // 버튼 참조
+    [Header("UI 버튼")]
     [SerializeField] private Button _zoomInButton;
     [SerializeField] private Button _zoomOutButton;
 
@@ -52,7 +52,7 @@ public class MinimapCamera : MonoBehaviour
         }
     }
 
-    #region Public Methods for UI Buttons
+    #region UI 버튼용 공개 메서드
     /// <summary>
     /// 미니맵 카메라를 줌 인합니다. UI 버튼의 OnClick 이벤트에 연결하세요.
     /// </summary>

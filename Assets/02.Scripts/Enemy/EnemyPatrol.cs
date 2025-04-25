@@ -4,14 +4,14 @@ using System.Collections;
 [RequireComponent(typeof(CharacterController))]
 public class EnemyPatrol : MonoBehaviour
 {
-    #region Serialized Fields
-    [Header("Patrol Settings")]
+    #region 직렬화 필드
+    [Header("순찰 설정")]
     [SerializeField] private Transform[] _waypoints;
     [SerializeField] private float _waitTime = 2f;
     [SerializeField] private float _rotationSpeed = 5f;
     #endregion
 
-    #region Private Fields
+    #region 비공개 필드
     private CharacterController _characterController;
     private float _currentMoveSpeed;
     private int _currentWaypointIndex = 0;
@@ -21,12 +21,12 @@ public class EnemyPatrol : MonoBehaviour
     private bool _isSinglePointPatrol = false;
     #endregion
 
-    #region Properties
+    #region 프로퍼티
     public bool IsPatrolling => _isPatrolling;
     public bool HasWaypoints => _waypoints != null && _waypoints.Length > 0;
     #endregion
 
-    #region Private Methods
+    #region 비공개 메서드
     private IEnumerator Patrol_Coroutine()
     {
         while (_isPatrolling)
@@ -116,7 +116,7 @@ public class EnemyPatrol : MonoBehaviour
     }
     #endregion
 
-    #region Public Methods
+    #region 공개 메서드
     /// <summary>
     /// 순찰을 시작하거나 재개합니다. Enemy 스크립트에서 호출됩니다.
     /// </summary>
@@ -179,7 +179,7 @@ public class EnemyPatrol : MonoBehaviour
     }
     #endregion
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     // Gizmos를 사용하여 순찰 경로 시각화 (Editor에서만 보임)
     private void OnDrawGizmosSelected()
     {

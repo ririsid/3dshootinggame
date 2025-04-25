@@ -21,7 +21,7 @@ public class Barrel : MonoBehaviour, IDamageable
     private bool _isExploded = false;
     private Rigidbody _rigidbody;
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void Awake()
     {
         _rigidbody = GetComponent<Rigidbody>();

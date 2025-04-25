@@ -6,7 +6,7 @@ using UnityEngine;
 /// </summary>
 public class ObjectPoolManager : MonoBehaviour
 {
-    #region Singleton
+    #region 싱글톤
     private static ObjectPoolManager _instance;
     public static ObjectPoolManager Instance
     {
@@ -23,7 +23,7 @@ public class ObjectPoolManager : MonoBehaviour
     }
     #endregion
 
-    #region Fields
+    #region 필드
     // 풀링할 오브젝트 종류별로 딕셔너리 관리
     private Dictionary<string, Queue<GameObject>> _poolDictionary = new Dictionary<string, Queue<GameObject>>();
     private Dictionary<string, GameObject> _prefabDictionary = new Dictionary<string, GameObject>();
@@ -36,7 +36,7 @@ public class ObjectPoolManager : MonoBehaviour
     private Transform _poolRoot;
     #endregion
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void Awake()
     {
         if (_instance != null && _instance != this)
@@ -54,7 +54,7 @@ public class ObjectPoolManager : MonoBehaviour
     }
     #endregion
 
-    #region Public Methods
+    #region 공개 메서드
     /// <summary>
     /// 오브젝트 풀 초기화
     /// </summary>
@@ -146,7 +146,7 @@ public class ObjectPoolManager : MonoBehaviour
     }
     #endregion
 
-    #region Private Methods
+    #region 비공개 메서드
     /// <summary>
     /// 새 오브젝트 생성
     /// </summary>

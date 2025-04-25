@@ -17,7 +17,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     private Vector3 _originalScale;
     private Tweener _currentTween;
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void Awake()
     {
         // 크로스헤어 없으면 현재 게임오브젝트의 RectTransform 사용
@@ -28,7 +28,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region Event Registration
+    #region 이벤트 등록
     protected override void RegisterEvents()
     {
         if (_playerFire != null)
@@ -46,7 +46,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region Effect Methods
+    #region 효과 메서드
     /// <summary>
     /// 총 발사 시 크로스헤어에 반동 효과를 적용합니다.
     /// </summary>
@@ -67,7 +67,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region Public Methods
+    #region 공개 메서드
     /// <summary>
     /// PlayerFire 참조를 설정합니다. (IUIPlayerComponent 구현)
     /// </summary>

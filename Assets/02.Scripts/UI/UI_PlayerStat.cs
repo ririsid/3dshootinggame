@@ -29,7 +29,7 @@ public class UI_PlayerStat : UI_Component
     // 모든 UI 컴포넌트를 관리할 리스트
     private List<IUIPlayerComponent> _uiComponents = new List<IUIPlayerComponent>();
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void Awake()
     {
         // UI 컴포넌트 자동 수집
@@ -42,7 +42,7 @@ public class UI_PlayerStat : UI_Component
     }
     #endregion
 
-    #region Component Collection
+    #region 컴포넌트 수집
     /// <summary>
     /// 하위 UI 컴포넌트들을 수집하는 메서드
     /// </summary>
@@ -82,7 +82,7 @@ public class UI_PlayerStat : UI_Component
     }
     #endregion
 
-    #region Event Callbacks
+    #region 이벤트 콜백
     protected override void RegisterEvents()
     {
         // 이 클래스에서는 직접적인 이벤트 등록이 필요 없음
@@ -96,7 +96,7 @@ public class UI_PlayerStat : UI_Component
     }
     #endregion
 
-    #region Public Methods
+    #region 공개 메서드
     /// <summary>
     /// PlayerStat 참조 설정 및 하위 컴포넌트에 전달
     /// </summary>

@@ -6,7 +6,7 @@ using UnityEngine.AI;
 [RequireComponent(typeof(EnemyPatrol))]
 public class Enemy : MonoBehaviour, IDamageable
 {
-    #region Enums
+    #region 열거형
     /// <summary>
     /// 적의 상태를 나타내는 열거형입니다.
     /// </summary>
@@ -22,7 +22,7 @@ public class Enemy : MonoBehaviour, IDamageable
     }
     #endregion
 
-    #region State Variables
+    #region 상태 변수
     [Header("상태")]
     [SerializeField] private EnemyState _currentState = EnemyState.Idle; // 현재 적의 상태
     /// <summary>
@@ -44,15 +44,15 @@ public class Enemy : MonoBehaviour, IDamageable
     [SerializeField] private float _idleDuration = 3f;
     #endregion
 
-    #region References
+    #region 참조
     private GameObject _player;
     private CharacterController _characterController;
     private NavMeshAgent _agent;
     private EnemyPatrol _enemyPatrol;
     #endregion
 
-    #region Detection & Movement Settings
-    [Header("Detection & Movement")]
+    #region 감지 및 이동 설정
+    [Header("감지 및 이동")]
     [SerializeField] private float _findDistance = 10f;
     [SerializeField] private float _returnDistance = 10f;
     [SerializeField] private float _attackDistance = 1.5f;
@@ -63,8 +63,8 @@ public class Enemy : MonoBehaviour, IDamageable
     [SerializeField] private float _maxReturnDuration = 20f;
     #endregion
 
-    #region Combat Settings
-    [Header("Combat")]
+    #region 전투 설정
+    [Header("전투")]
     [SerializeField] private float _attackCooldown = 1f;
     private float _attackCooldownTimer = 0f;
     [SerializeField] private int _maxHealth = 100;
@@ -73,13 +73,13 @@ public class Enemy : MonoBehaviour, IDamageable
     [SerializeField] private float _deathDuration = 1f;
     #endregion
 
-    #region Knockback Settings
-    [Header("Knockback")]
+    #region 넉백 설정
+    [Header("넉백")]
     [SerializeField] private float _knockbackForce = 5f;
     [SerializeField] private float _knockbackDuration = 0.2f; // _damagedDuration보다 짧아야 함
     #endregion
 
-    #region Private Variables
+    #region 비공개 변수
     private Vector3 _startPosition;
     private Quaternion _startRotation;
     private Coroutine _stateCoroutine;
@@ -87,7 +87,7 @@ public class Enemy : MonoBehaviour, IDamageable
     private Vector3 _knockbackDirection; // 넉백 방향 저장
     #endregion
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void Awake()
     {
         _characterController = GetComponent<CharacterController>();
@@ -124,7 +124,7 @@ public class Enemy : MonoBehaviour, IDamageable
     }
     #endregion
 
-    #region State Machine Logic
+    #region 상태 머신 로직
     private void CheckStateTransitions()
     {
         if (_isDead || _player == null) return;
@@ -264,7 +264,7 @@ public class Enemy : MonoBehaviour, IDamageable
     }
     #endregion
 
-    #region State Coroutines
+    #region 상태 코루틴
     private IEnumerator Idle_Coroutine()
     {
         yield return new WaitForSeconds(_idleDuration);
@@ -420,7 +420,7 @@ public class Enemy : MonoBehaviour, IDamageable
     }
     #endregion
 
-    #region Public Methods
+    #region 공개 메서드
     /// <summary>
     /// 적에게 데미지를 적용하고 넉백 효과를 발생시킵니다.
     /// </summary>
@@ -430,7 +430,7 @@ public class Enemy : MonoBehaviour, IDamageable
         if (_isDead || CurrentState == EnemyState.Damaged) return;
 
         _currentHealth -= damage.Value;
-        Debug.Log($"Enemy Hit! Health: {_currentHealth}/{_maxHealth}");
+        Debug.Log($"적 피격! 체력: {_currentHealth}/{_maxHealth}");
 
         // 넉백 방향 계산 (데미지 발생 위치로부터 멀어지는 방향)
         _knockbackDirection = (transform.position - damage.From.transform.position).normalized;
