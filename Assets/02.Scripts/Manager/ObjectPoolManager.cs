@@ -6,7 +6,7 @@ using UnityEngine;
 /// </summary>
 public class ObjectPoolManager : MonoBehaviour
 {
-    #region Singleton
+    #region 싱글톤
     private static ObjectPoolManager _instance;
     public static ObjectPoolManager Instance
     {
@@ -23,7 +23,7 @@ public class ObjectPoolManager : MonoBehaviour
     }
     #endregion
 
-    #region Fields
+    #region 필드
     // 풀링할 오브젝트 종류별로 딕셔너리 관리
     private Dictionary<string, Queue<GameObject>> _poolDictionary = new Dictionary<string, Queue<GameObject>>();
     private Dictionary<string, GameObject> _prefabDictionary = new Dictionary<string, GameObject>();
@@ -36,7 +36,7 @@ public class ObjectPoolManager : MonoBehaviour
     private Transform _poolRoot;
     #endregion
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void Awake()
     {
         if (_instance != null && _instance != this)
@@ -54,7 +54,7 @@ public class ObjectPoolManager : MonoBehaviour
     }
     #endregion
 
-    #region Public Methods
+    #region 공개 메서드
     /// <summary>
     /// 오브젝트 풀 초기화
     /// </summary>
@@ -117,36 +117,40 @@ public class ObjectPoolManager : MonoBehaviour
     /// <summary>
     /// 오브젝트를 풀로 반환
     /// </summary>
-    /// <param name="obj">반환할 오브젝트</param>
-    public void ReturnToPool(GameObject obj)
+    /// <param name="gameObject">반환할 오브젝트</param>
+    public void ReturnToPool(GameObject gameObject)
     {
-        string prefabName = obj.name.Replace("(Clone)", "");
+        string prefabName = gameObject.name.Replace("(Clone)", "");
 
         // 풀이 초기화되지 않았다면 파괴
         if (!_poolDictionary.ContainsKey(prefabName))
         {
             Debug.LogWarning($"{prefabName} 풀이 존재하지 않습니다. 오브젝트를 파괴합니다.");
-            Destroy(obj);
+            Destroy(gameObject);
             return;
         }
 
         // 오브젝트 비활성화 및 풀의 부모 아래로 이동
-        obj.SetActive(false);
-        obj.transform.parent = _poolParentDictionary[prefabName];
+        gameObject.SetActive(false);
+        gameObject.transform.parent = _poolParentDictionary[prefabName];
 
         // 기본 상태로 초기화 (위치, 회전, 속도 등)
-        if (obj.TryGetComponent<Rigidbody>(out Rigidbody rigidbody))
+        gameObject.transform.localPosition = Vector3.zero;
+        gameObject.transform.localRotation = Quaternion.identity;
+        gameObject.transform.localScale = Vector3.one;
+
+        if (gameObject.TryGetComponent<Rigidbody>(out Rigidbody rigidbody))
         {
             rigidbody.linearVelocity = Vector3.zero;
             rigidbody.angularVelocity = Vector3.zero;
         }
 
         // 풀에 반환
-        _poolDictionary[prefabName].Enqueue(obj);
+        _poolDictionary[prefabName].Enqueue(gameObject);
     }
     #endregion
 
-    #region Private Methods
+    #region 비공개 메서드
     /// <summary>
     /// 새 오브젝트 생성
     /// </summary>

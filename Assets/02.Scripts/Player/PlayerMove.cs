@@ -489,7 +489,7 @@ public class PlayerMove : MonoBehaviour
         return wallMovement;
     }
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
         bool isWallLayer = ((1 << hit.collider.gameObject.layer) & _wallLayer) != 0;

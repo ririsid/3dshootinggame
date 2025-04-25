@@ -32,7 +32,7 @@ public class UI_BombComponent : UI_Component, IUIPlayerComponent
         }
     }
 
-    #region Public Methods
+    #region 공개 메서드
     /// <summary>
     /// PlayerStat 참조 설정 (IUIPlayerComponent 구현)
     /// </summary>
@@ -78,7 +78,7 @@ public class UI_BombComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region Event Registration
+    #region 이벤트 등록
     protected override void RegisterEvents()
     {
         if (_playerStat != null)
@@ -108,7 +108,7 @@ public class UI_BombComponent : UI_Component, IUIPlayerComponent
     }
     #endregion
 
-    #region UI Update Methods
+    #region UI 업데이트 메서드
     /// <summary>
     /// 폭탄 개수 UI 업데이트
     /// </summary>

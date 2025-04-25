@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Bomb : MonoBehaviour
 {
-    #region Fields
+    #region 필드
     [Header("폭발 설정")]
     [SerializeField] private GameObject _explosionEffectPrefab;
     [SerializeField] private float _explosionEffectDuration = 2f; // 폭발 이펙트 지속 시간
@@ -21,7 +21,7 @@ public class Bomb : MonoBehaviour
     private float _activationTime; // 활성화 시간
     #endregion
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void Awake()
     {
         // Awake에서 풀 초기화 확인 (Start보다 일찍 실행)
@@ -48,7 +48,7 @@ public class Bomb : MonoBehaviour
     }
     #endregion
 
-    #region Public Methods
+    #region 공개 메서드
     /// <summary>
     /// 폭탄 폭발 처리
     /// </summary>
@@ -117,7 +117,7 @@ public class Bomb : MonoBehaviour
     }
     #endregion
 
-    #region Private Methods
+    #region 비공개 메서드
     /// <summary>
     /// 폭발 이펙트 오브젝트 풀 초기화
     /// </summary>

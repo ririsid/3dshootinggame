@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 
 public class PlayerFire : MonoBehaviour
 {
-    #region Fields
+    #region 필드
     [Header("발사 설정")]
     [SerializeField] private GameObject _firePosition;
     [SerializeField] private int _bulletDamage = 10; // 총알 피해량
@@ -45,13 +45,13 @@ public class PlayerFire : MonoBehaviour
     private Coroutine _reloadCoroutine;
     #endregion
 
-    #region Properties
+    #region 프로퍼티
     public int CurrentBombCount => _playerStat.CurrentBombCount;
     public int MaxBombCount => _playerStat.MaxBombCount;
     public float BombChargePercentage => _currentBombCharge / _playerStat.BombMaxChargeTime;
     #endregion
 
-    #region Unity Event Functions
+    #region Unity 이벤트 함수
     private void Awake()
     {
         _playerStat = GetComponent<PlayerStat>();
@@ -96,7 +96,7 @@ public class PlayerFire : MonoBehaviour
     }
     #endregion
 
-    #region Private Methods
+    #region 비공개 메서드
     /// <summary>
     /// 폭탄 오브젝트 풀 초기화
     /// </summary>
@@ -449,7 +449,7 @@ public class PlayerFire : MonoBehaviour
     }
     #endregion
 
-    #region Public Methods
+    #region 공개 메서드
     // 폭탄 개수 추가 메서드 (나중에 아이템 획득 시 사용 가능)
     public void AddBomb(int amount = 1)
     {
