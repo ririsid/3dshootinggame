@@ -91,8 +91,7 @@ public class Bomb : MonoBehaviour
         foreach (Collider hitCollider in colliders)
         {
             // IDamageable 인터페이스를 가진 컴포넌트를 찾아서 피해를 줍니다.
-            IDamageable damageable = hitCollider.GetComponent<IDamageable>();
-            if (damageable != null)
+            if (hitCollider.TryGetComponent<IDamageable>(out var damageable))
             {
                 Damage damage = new()
                 {

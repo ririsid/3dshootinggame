@@ -264,8 +264,7 @@ public class PlayerFire : MonoBehaviour
             CreateBulletHitEffect(hitInfo.point, hitInfo.normal);
 
             // IDamageable 인터페이스를 가진 컴포넌트를 찾아서 피해를 줍니다.
-            IDamageable damageable = hitInfo.collider.GetComponent<IDamageable>();
-            if (damageable != null)
+            if (hitInfo.collider.TryGetComponent<IDamageable>(out var damageable))
             {
                 Damage damage = new()
                 {
@@ -306,8 +305,7 @@ public class PlayerFire : MonoBehaviour
             effectObj.SetActive(true);
 
             // 파티클 시스템 재생
-            ParticleSystem particleSystem = effectObj.GetComponent<ParticleSystem>();
-            if (particleSystem != null)
+            if (effectObj.TryGetComponent<ParticleSystem>(out var particleSystem))
             {
                 particleSystem.Play();
             }
