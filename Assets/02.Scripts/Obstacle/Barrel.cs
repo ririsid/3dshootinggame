@@ -42,7 +42,7 @@ public class Barrel : MonoBehaviour, IDamageable
         if (_isExploded) return;
 
         _currentHealth -= damage.Value;
-        Debug.Log($"Barrel takes {damage.Value} damage from {damage.From.name}. Current health: {_currentHealth}");
+        Debug.Log($"배럴이 {damage.From.name}에게 {damage.Value}의 데미지를 받았습니다. 현재 체력: {_currentHealth}");
 
         if (_currentHealth <= 0)
         {

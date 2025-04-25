@@ -4204,6 +4204,8 @@ MonoBehaviour:
   _traceSpeed: 5
   _returnSpeed: 4
   _rotationSpeed: 10
+  _maxTraceDuration: 15
+  _maxReturnDuration: 20
   _attackCooldown: 1
   _maxHealth: 100
   _damagedDuration: 0.5
@@ -5631,6 +5633,14 @@ PrefabInstance:
       objectReference: {fileID: 34654724}
     - target: {fileID: 1319726804177106199, guid: bc06cd29e2c3253448d7243a660e8cac, type: 3}
       propertyPath: pointB
+      value: 
+      objectReference: {fileID: 607832593}
+    - target: {fileID: 1319726804177106199, guid: bc06cd29e2c3253448d7243a660e8cac, type: 3}
+      propertyPath: _pointA
+      value: 
+      objectReference: {fileID: 34654724}
+    - target: {fileID: 1319726804177106199, guid: bc06cd29e2c3253448d7243a660e8cac, type: 3}
+      propertyPath: _pointB
       value: 
       objectReference: {fileID: 607832593}
     - target: {fileID: 2798376251994462116, guid: bc06cd29e2c3253448d7243a660e8cac, type: 3}
