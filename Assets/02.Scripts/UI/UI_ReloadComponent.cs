@@ -60,8 +60,7 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
         }
 
         // 플레이어 스탯에서 재장전 시간 가져오기
-        PlayerStat playerStat = _playerFire.GetComponent<PlayerStat>();
-        if (playerStat != null)
+        if (_playerFire.TryGetComponent<PlayerStat>(out var playerStat))
         {
             _reloadDuration = playerStat.ReloadTime;
         }
@@ -119,8 +118,7 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
         // 재장전 시간 가져오기
         if (_playerFire != null)
         {
-            PlayerStat playerStat = _playerFire.GetComponent<PlayerStat>();
-            if (playerStat != null)
+            if (_playerFire.TryGetComponent<PlayerStat>(out var playerStat))
             {
                 _reloadDuration = playerStat.ReloadTime;
             }

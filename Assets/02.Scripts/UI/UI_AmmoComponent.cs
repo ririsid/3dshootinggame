@@ -34,8 +34,7 @@ public class UI_AmmoComponent : UI_Component, IUIPlayerComponent
         }
 
         // 초기 UI 업데이트
-        PlayerStat playerStat = _playerFire.GetComponent<PlayerStat>();
-        if (playerStat != null)
+        if (_playerFire.TryGetComponent<PlayerStat>(out var playerStat))
         {
             UpdateAmmoDisplay(playerStat.CurrentAmmo, playerStat.MaxAmmo);
         }
@@ -77,8 +76,7 @@ public class UI_AmmoComponent : UI_Component, IUIPlayerComponent
         // 초기값으로 UI 업데이트
         if (_playerFire != null)
         {
-            PlayerStat playerStat = _playerFire.GetComponent<PlayerStat>();
-            if (playerStat != null)
+            if (_playerFire.TryGetComponent<PlayerStat>(out var playerStat))
             {
                 UpdateAmmoDisplay(playerStat.CurrentAmmo, playerStat.MaxAmmo);
             }

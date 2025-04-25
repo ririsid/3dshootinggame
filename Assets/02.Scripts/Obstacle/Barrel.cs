@@ -72,10 +72,9 @@ public class Barrel : MonoBehaviour, IDamageable
             if (collider.gameObject == gameObject) continue;
 
             // 데미지 적용
-            IDamageable damageable = collider.GetComponent<IDamageable>();
-            if (damageable != null)
+            if (collider.TryGetComponent<IDamageable>(out var damageable))
             {
-                Damage explosionDamage = new Damage
+                Damage explosionDamage = new()
                 {
                     Value = _explosionDamage,
                     From = gameObject
@@ -84,8 +83,7 @@ public class Barrel : MonoBehaviour, IDamageable
             }
 
             // 물리 효과 적용
-            Rigidbody rigidbody = collider.GetComponent<Rigidbody>();
-            if (rigidbody != null)
+            if (collider.TryGetComponent<Rigidbody>(out var rigidbody))
             {
                 rigidbody.AddExplosionForce(_explosionForce, transform.position, _explosionRadius, _upwardModifier);
             }
