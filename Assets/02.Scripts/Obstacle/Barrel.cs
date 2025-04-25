@@ -18,6 +18,10 @@ public class Barrel : MonoBehaviour, IDamageable
     [Header("이펙트")]
     [SerializeField] private GameObject _explosionEffectPrefab;
 
+    [Header("충돌 레이어 설정")]
+    [Tooltip("폭발 후 배럴이 충돌을 무시할 레이어 마스크")]
+    [SerializeField] private LayerMask _ignoreCollisionLayerMask;
+
     private bool _isExploded = false;
     private Rigidbody _rigidbody;
 
@@ -99,7 +103,7 @@ public class Barrel : MonoBehaviour, IDamageable
                 Random.Range(-0.5f, 0.5f)
             ).normalized;
 
-            // 데미지를 입은 방향도 고려(마지막으로 데미지를 준 오브젝트 방향의 반대로 튕김)
+            // 랜덤한 폭발 위치 설정
             Vector3 explosionPosition = transform.position - randomDirection * 0.5f;
 
             // 폭발력 적용 (랜덤성과 약간의 회전도 추가)
@@ -115,14 +119,33 @@ public class Barrel : MonoBehaviour, IDamageable
                 Random.Range(-_explosionForce, _explosionForce)
             ) * 0.1f);
 
-            // 배럴을 다른 오브젝트와 충돌하지 않도록 설정
-            Physics.IgnoreLayerCollision(gameObject.layer, LayerMask.NameToLayer("Player"), true);
-            Physics.IgnoreLayerCollision(gameObject.layer, LayerMask.NameToLayer("Enemy"), true);
-            // 지면과는 계속 충돌하도록 유지
+            // 배럴을 지정된 레이어와 충돌하지 않도록 설정
+            ApplyIgnoreCollisionLayers();
         }
 
         // 일정 시간 후에 오브젝트 파괴
         StartCoroutine(DestroyAfterDelay());
+    }
+
+    /// <summary>
+    /// 배럴이 폭발 후 지정된 레이어와 충돌하지 않도록 설정합니다.
+    /// </summary>
+    private void ApplyIgnoreCollisionLayers()
+    {
+        int[] ignoreCollisionLayerIndices = _ignoreCollisionLayerMask.GetIncludedLayerIndices();
+
+        if (ignoreCollisionLayerIndices.Length > 0)
+        {
+            foreach (int layerIndex in ignoreCollisionLayerIndices)
+            {
+                Physics.IgnoreLayerCollision(gameObject.layer, layerIndex, true);
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Barrel: 충돌 무시 레이어가 인스펙터에서 설정되지 않았습니다.", this);
+        }
+        // 지정된 레이어 외 다른 레이어(예: 지면)와는 계속 충돌합니다.
     }
 
     /// <summary>
