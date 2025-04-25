@@ -119,26 +119,33 @@ public class Barrel : MonoBehaviour, IDamageable
                 Random.Range(-_explosionForce, _explosionForce)
             ) * 0.1f);
 
-            int[] ignoreCollisionLayerIndices = _ignoreCollisionLayerMask.GetIncludedLayerIndices();
-
             // 배럴을 지정된 레이어와 충돌하지 않도록 설정
-            if (ignoreCollisionLayerIndices != null && ignoreCollisionLayerIndices.Length > 0)
-            {
-                foreach (int layerIndex in ignoreCollisionLayerIndices)
-                {
-                    // GetIncludedLayerIndices가 이미 유효한 인덱스만 반환하므로 추가 검사 불필요
-                    Physics.IgnoreLayerCollision(gameObject.layer, layerIndex, true);
-                }
-            }
-            else
-            {
-                Debug.LogWarning("Barrel: 충돌 무시 레이어가 인스펙터에서 설정되지 않았습니다.", this);
-            }
-            // 지정된 레이어 외 다른 레이어(예: 지면)와는 계속 충돌합니다.
+            ApplyIgnoreCollisionLayers();
         }
 
         // 일정 시간 후에 오브젝트 파괴
         StartCoroutine(DestroyAfterDelay());
+    }
+
+    /// <summary>
+    /// 배럴이 폭발 후 지정된 레이어와 충돌하지 않도록 설정합니다.
+    /// </summary>
+    private void ApplyIgnoreCollisionLayers()
+    {
+        int[] ignoreCollisionLayerIndices = _ignoreCollisionLayerMask.GetIncludedLayerIndices();
+
+        if (ignoreCollisionLayerIndices.Length > 0)
+        {
+            foreach (int layerIndex in ignoreCollisionLayerIndices)
+            {
+                Physics.IgnoreLayerCollision(gameObject.layer, layerIndex, true);
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Barrel: 충돌 무시 레이어가 인스펙터에서 설정되지 않았습니다.", this);
+        }
+        // 지정된 레이어 외 다른 레이어(예: 지면)와는 계속 충돌합니다.
     }
 
     /// <summary>
