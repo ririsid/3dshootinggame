@@ -270,11 +270,21 @@ public static class NavMeshUtility
         // 현재 forward 방향 기준으로 무작위 각도 생성
         float randomAngle = Random.Range(-angleRange, angleRange);
 
-        // 현재 위치 기준으로 회전 방향 계산
-        Vector3 currentForward = Quaternion.LookRotation(
-            new Vector3(rotationCenter.x, 0, rotationCenter.z) -
-            new Vector3(currentPosition.x, 0, currentPosition.z)
-        ).eulerAngles;
+        // 현재 위치에서 회전 중심으로의 방향 계산
+        Vector3 directionToCenter = new Vector3(rotationCenter.x, 0, rotationCenter.z) -
+                                   new Vector3(currentPosition.x, 0, currentPosition.z);
+
+        // 방향 벡터가 영벡터인지 확인하고 기본 방향 설정
+        Vector3 currentForward;
+        if (directionToCenter.sqrMagnitude < 0.001f)
+        {
+            // 방향이 없는 경우 기본 방향 사용
+            currentForward = new Vector3(0, Random.Range(0, 360), 0);
+        }
+        else
+        {
+            currentForward = Quaternion.LookRotation(directionToCenter).eulerAngles;
+        }
 
         // 최종 회전 방향 계산
         Vector3 direction = Quaternion.Euler(0, currentForward.y + randomAngle, 0) * Vector3.forward;

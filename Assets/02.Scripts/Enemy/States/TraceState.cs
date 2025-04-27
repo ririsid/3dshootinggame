@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.AI;
 
 /// <summary>
 /// 적의 추적 상태를 구현하는 클래스입니다.
@@ -48,14 +47,19 @@ public class TraceState : IEnemyState
 
     public void CheckTransitions()
     {
-        if (_enemy.Player == null) return;
+        if (_enemy.Player == null)
+        {
+            // 플레이어를 놓쳤을 때 행동 전략에 위임
+            _enemy.LosePlayer();
+            return;
+        }
 
-        // NavMeshUtility를 사용하여 실제 경로 거리 계산
         float distanceToPlayer = _enemy.GetDistanceToDestination(_enemy.Player.transform.position, true);
 
-        if (distanceToPlayer > _enemy.ReturnDistance)
+        if (_enemy.EnemyType != EnemyType.Chase && distanceToPlayer > _enemy.ReturnDistance)
         {
-            _enemy.SetState(EnemyState.Return);
+            // 플레이어가 너무 멀어진 경우 행동 전략에 위임 (Chase 타입이 아닐 때만)
+            _enemy.LosePlayer();
         }
         else if (distanceToPlayer < _enemy.AttackDistance)
         {
@@ -74,17 +78,17 @@ public class TraceState : IEnemyState
             _traceTimer += Time.deltaTime;
             _pathUpdateTimer += Time.deltaTime;
 
-            // 최대 추적 시간 초과 시 Return 상태로 전환
-            if (_traceTimer > _enemy.MaxTraceDuration)
+            // Chase 타입이 아닐 경우에만 최대 추적 시간 제한 적용
+            if (_enemy.EnemyType != EnemyType.Chase && _traceTimer > _enemy.MaxTraceDuration)
             {
-                _enemy.SetState(EnemyState.Return);
+                _enemy.LosePlayer();
                 yield break;
             }
 
             // 플레이어가 없거나 사망한 경우 처리
             if (_enemy.Player == null)
             {
-                _enemy.SetState(EnemyState.Return);
+                _enemy.LosePlayer();
                 yield break;
             }
 
@@ -102,9 +106,8 @@ public class TraceState : IEnemyState
                         // 경로 설정 실패 시 시야 확인
                         if (!NavMeshUtility.CanReachDestination(_enemy.transform.position, _enemy.Player.transform.position))
                         {
-                            // 플레이어 주변의 도달 가능한 지점 탐색 시도 코드를 추가할 수 있음
-                            // 현재는 Return 상태로 전환
-                            _enemy.SetState(EnemyState.Return);
+                            // 플레이어에게 도달할 수 없는 경우 행동 전략에 위임
+                            _enemy.LosePlayer();
                             yield break;
                         }
                     }
@@ -121,7 +124,7 @@ public class TraceState : IEnemyState
             }
             else
             {
-                _enemy.SetState(EnemyState.Return);
+                _enemy.LosePlayer();
                 yield break;
             }
 

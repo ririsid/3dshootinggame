@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.AI;
 
 /// <summary>
 /// 적의 공격 상태를 구현하는 클래스입니다.
@@ -57,19 +56,25 @@ public class AttackState : IEnemyState
 
     public void CheckTransitions()
     {
-        if (_enemy.Player == null) return;
+        if (_enemy.Player == null)
+        {
+            // 플레이어가 없는 경우 행동 전략에 위임
+            _enemy.CompleteAttack();
+            return;
+        }
 
         // NavMeshUtility를 사용하여 더 정확한 경로 거리 계산
         float distanceToPlayer = _enemy.GetDistanceToDestination(_enemy.Player.transform.position, true);
 
         if (distanceToPlayer > _enemy.AttackDistance * 1.2f) // 약간의 여유를 두고 추적으로 전환
         {
-            _enemy.SetState(EnemyState.Trace);
+            // 행동 전략에 공격 완료 처리 위임
+            _enemy.CompleteAttack();
         }
         else if (!_enemy.IsTargetInSight(_enemy.Player.transform.position, 120f, _enemy.AttackDistance * 1.5f))
         {
-            // 시야에서 벗어난 경우
-            _enemy.SetState(EnemyState.Trace);
+            // 시야에서 벗어난 경우 행동 전략에 위임
+            _enemy.CompleteAttack();
         }
     }
 
@@ -82,7 +87,8 @@ public class AttackState : IEnemyState
             // 플레이어가 없는 경우 처리
             if (_enemy.Player == null)
             {
-                _enemy.SetState(EnemyState.Idle);
+                // 행동 전략에 위임
+                _enemy.CompleteAttack();
                 yield break;
             }
 

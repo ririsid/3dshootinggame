@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.AI;
 
 /// <summary>
 /// 적의 복귀 상태를 구현하는 클래스입니다.
@@ -41,6 +40,7 @@ public class ReturnState : IEnemyState
     public void Update()
     {
         // 코루틴에서 처리
+        CheckTransitions();
     }
 
     public void CheckTransitions()
@@ -49,16 +49,27 @@ public class ReturnState : IEnemyState
 
         float distanceToPlayer = _enemy.GetDistanceToDestination(_enemy.Player.transform.position, true);
 
+        // 원래 위치에 도달했으면 전략 패턴의 초기 상태로 전환
         if (_enemy.HasReachedDestination(_enemy.StartPosition) && _enemy.CharacterController.isGrounded)
         {
-            _enemy.SetState(EnemyState.Idle);
+            _enemy.SetState(_enemy.BehaviorStrategy.GetInitialState());
         }
         else if (distanceToPlayer < _enemy.FindDistance)
         {
             // 시야 내에 플레이어가 있는지 확인
             if (_enemy.IsTargetInSight(_enemy.Player.transform.position, 120f, _enemy.FindDistance))
             {
-                _enemy.SetState(EnemyState.Trace);
+                // 플레이어 감지 처리를 전략 패턴에 위임
+                EnemyState nextState = _enemy.BehaviorStrategy.OnPlayerDetected(
+                    _enemy,
+                    _enemy.Player.transform.position,
+                    distanceToPlayer
+                );
+
+                if (nextState != _enemy.GetComponent<EnemyStateMachine>().CurrentStateType)
+                {
+                    _enemy.SetState(nextState);
+                }
             }
         }
     }
@@ -72,7 +83,9 @@ public class ReturnState : IEnemyState
             Vector3 safePosition = NavMeshUtility.GetNavMeshPosition(_enemy.StartPosition);
             _enemy.transform.position = safePosition;
             _enemy.transform.rotation = _enemy.StartRotation;
-            _enemy.SetState(EnemyState.Idle);
+
+            // 전략 패턴의 초기 상태로 전환
+            _enemy.SetState(_enemy.BehaviorStrategy.GetInitialState());
             yield break;
         }
 
@@ -94,7 +107,9 @@ public class ReturnState : IEnemyState
                 Vector3 safePosition = NavMeshUtility.GetNavMeshPosition(_enemy.StartPosition);
                 _enemy.transform.position = safePosition;
                 _enemy.transform.rotation = _enemy.StartRotation;
-                _enemy.SetState(EnemyState.Idle);
+
+                // 전략 패턴의 초기 상태로 전환
+                _enemy.SetState(_enemy.BehaviorStrategy.GetInitialState());
                 yield break;
             }
 
@@ -110,7 +125,8 @@ public class ReturnState : IEnemyState
             // 유틸리티 메서드를 사용하여 목적지 도달 여부 확인
             if (_enemy.HasReachedDestination(_enemy.StartPosition, _enemy.Agent.stoppingDistance))
             {
-                _enemy.SetState(EnemyState.Idle);
+                // 전략 패턴의 초기 상태로 전환
+                _enemy.SetState(_enemy.BehaviorStrategy.GetInitialState());
                 yield break;
             }
 

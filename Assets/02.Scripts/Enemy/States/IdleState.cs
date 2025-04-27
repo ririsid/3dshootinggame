@@ -7,10 +7,8 @@ using UnityEngine;
 public class IdleState : IEnemyState
 {
     private Enemy _enemy;
-    private Coroutine _idleCoroutine;
     private Coroutine _lookAroundCoroutine;
-
-    // 필드들을 제거하고 Enemy 클래스의 프로퍼티 사용
+    private float _idleTimer = 0f;
 
     public IdleState(Enemy enemy)
     {
@@ -19,7 +17,7 @@ public class IdleState : IEnemyState
 
     public void Enter()
     {
-        _idleCoroutine = _enemy.StartCoroutine(IdleCoroutine());
+        _idleTimer = 0f;
         _lookAroundCoroutine = _enemy.StartCoroutine(LookAroundCoroutine());
 
         // NavMeshAgent 속도를 0으로 설정
@@ -31,12 +29,6 @@ public class IdleState : IEnemyState
 
     public void Exit()
     {
-        if (_idleCoroutine != null)
-        {
-            _enemy.StopCoroutine(_idleCoroutine);
-            _idleCoroutine = null;
-        }
-
         if (_lookAroundCoroutine != null)
         {
             _enemy.StopCoroutine(_lookAroundCoroutine);
@@ -46,35 +38,18 @@ public class IdleState : IEnemyState
 
     public void Update()
     {
-        // Idle 상태에서 플레이어 감지 확인
+        // 전략 패턴의 Idle 동작 수행
+        _enemy.BehaviorStrategy.OnIdle(_enemy);
+
+        // 타이머 증가 및 플레이어 감지 확인
+        _idleTimer += Time.deltaTime;
         CheckTransitions();
     }
 
     public void CheckTransitions()
     {
-        if (_enemy.Player == null) return;
-
-        // NavMeshUtility를 사용하여 실제 경로 거리 계산
-        float distanceToPlayer = _enemy.GetDistanceToDestination(_enemy.Player.transform.position, true);
-
-        if (distanceToPlayer < _enemy.FindDistance)
-        {
-            // 시야 내에 플레이어가 있는지 확인
-            if (_enemy.IsTargetInSight(_enemy.Player.transform.position, _enemy.ViewAngle, _enemy.FindDistance))
-            {
-                _enemy.SetState(EnemyState.Trace);
-            }
-        }
-    }
-
-    private IEnumerator IdleCoroutine()
-    {
-        yield return new WaitForSeconds(_enemy.IdleDuration);
-
-        if (!_enemy.IsDead)
-        {
-            _enemy.SetState(EnemyState.Patrol);
-        }
+        // 플레이어 감지 로직 수행
+        _enemy.DetectPlayer();
     }
 
     /// <summary>
@@ -165,15 +140,16 @@ public class IdleState : IEnemyState
                 // 플레이어와의 거리 확인 (NavMesh 경로 사용)
                 float distanceToPlayer = _enemy.GetDistanceToDestination(_enemy.Player.transform.position, true);
 
-                if (distanceToPlayer < _enemy.FindDistance)
+                // 전략 패턴을 통한 플레이어 감지 처리
+                EnemyState nextState = _enemy.BehaviorStrategy.OnPlayerDetected(
+                    _enemy,
+                    _enemy.Player.transform.position,
+                    distanceToPlayer
+                );
+
+                if (nextState != _enemy.GetComponent<EnemyStateMachine>().CurrentStateType)
                 {
-                    // 시야 내에 장애물이 없는지 확인
-                    if (_enemy.IsTargetInSight(_enemy.Player.transform.position, _enemy.ViewAngle / 2f, _enemy.FindDistance))
-                    {
-                        // 플레이어 발견, 추적 상태로 전환
-                        _enemy.SetState(EnemyState.Trace);
-                        return;
-                    }
+                    _enemy.SetState(nextState);
                 }
             }
         }
