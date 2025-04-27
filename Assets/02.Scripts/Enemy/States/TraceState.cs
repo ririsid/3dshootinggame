@@ -55,14 +55,14 @@ public class TraceState : IEnemyState
 
         if (distanceToPlayer > _enemy.ReturnDistance)
         {
-            _enemy.SetState(Enemy.EnemyState.Return);
+            _enemy.SetState(EnemyState.Return);
         }
         else if (distanceToPlayer < _enemy.AttackDistance)
         {
             // 시야 내에 있는지 확인 (공격 전)
             if (_enemy.IsTargetInSight(_enemy.Player.transform.position, 120f, _enemy.AttackDistance * 1.5f))
             {
-                _enemy.SetState(Enemy.EnemyState.Attack);
+                _enemy.SetState(EnemyState.Attack);
             }
         }
     }
@@ -77,14 +77,14 @@ public class TraceState : IEnemyState
             // 최대 추적 시간 초과 시 Return 상태로 전환
             if (_traceTimer > _enemy.MaxTraceDuration)
             {
-                _enemy.SetState(Enemy.EnemyState.Return);
+                _enemy.SetState(EnemyState.Return);
                 yield break;
             }
 
             // 플레이어가 없거나 사망한 경우 처리
             if (_enemy.Player == null)
             {
-                _enemy.SetState(Enemy.EnemyState.Return);
+                _enemy.SetState(EnemyState.Return);
                 yield break;
             }
 
@@ -104,7 +104,7 @@ public class TraceState : IEnemyState
                         {
                             // 플레이어 주변의 도달 가능한 지점 탐색 시도 코드를 추가할 수 있음
                             // 현재는 Return 상태로 전환
-                            _enemy.SetState(Enemy.EnemyState.Return);
+                            _enemy.SetState(EnemyState.Return);
                             yield break;
                         }
                     }
@@ -121,7 +121,7 @@ public class TraceState : IEnemyState
             }
             else
             {
-                _enemy.SetState(Enemy.EnemyState.Return);
+                _enemy.SetState(EnemyState.Return);
                 yield break;
             }
 

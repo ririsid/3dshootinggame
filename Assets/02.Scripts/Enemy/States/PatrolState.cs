@@ -64,7 +64,7 @@ public class PatrolState : IEnemyState
         // 거리와 시야각을 모두 고려하여 상태 전환
         if (distanceToPlayer < _enemy.FindDistance && isPlayerInSight)
         {
-            _enemy.SetState(Enemy.EnemyState.Trace);
+            _enemy.SetState(EnemyState.Trace);
             return;
         }
 
@@ -76,7 +76,7 @@ public class PatrolState : IEnemyState
         // 에이전트가 정지 상태이거나 경로가 설정되지 않은 경우만 Idle로 전환
         if (!isAgentValid || (hasPath == false && isStopped))
         {
-            _enemy.SetState(Enemy.EnemyState.Idle);
+            _enemy.SetState(EnemyState.Idle);
         }
     }
 }

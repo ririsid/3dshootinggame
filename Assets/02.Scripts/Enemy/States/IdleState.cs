@@ -62,7 +62,7 @@ public class IdleState : IEnemyState
             // 시야 내에 플레이어가 있는지 확인
             if (_enemy.IsTargetInSight(_enemy.Player.transform.position, _enemy.ViewAngle, _enemy.FindDistance))
             {
-                _enemy.SetState(Enemy.EnemyState.Trace);
+                _enemy.SetState(EnemyState.Trace);
             }
         }
     }
@@ -73,7 +73,7 @@ public class IdleState : IEnemyState
 
         if (!_enemy.IsDead)
         {
-            _enemy.SetState(Enemy.EnemyState.Patrol);
+            _enemy.SetState(EnemyState.Patrol);
         }
     }
 
@@ -171,7 +171,7 @@ public class IdleState : IEnemyState
                     if (_enemy.IsTargetInSight(_enemy.Player.transform.position, _enemy.ViewAngle / 2f, _enemy.FindDistance))
                     {
                         // 플레이어 발견, 추적 상태로 전환
-                        _enemy.SetState(Enemy.EnemyState.Trace);
+                        _enemy.SetState(EnemyState.Trace);
                         return;
                     }
                 }

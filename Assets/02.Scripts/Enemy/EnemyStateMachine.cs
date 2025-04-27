@@ -6,18 +6,18 @@ using UnityEngine;
 /// </summary>
 public class EnemyStateMachine : MonoBehaviour
 {
-    [SerializeField] private Enemy.EnemyState _initialState = Enemy.EnemyState.Idle;
+    [SerializeField] private EnemyState _initialState = EnemyState.Idle;
 
-    private Dictionary<Enemy.EnemyState, IEnemyState> _states = new Dictionary<Enemy.EnemyState, IEnemyState>();
+    private Dictionary<EnemyState, IEnemyState> _states = new Dictionary<EnemyState, IEnemyState>();
     private IEnemyState _currentState;
-    private Enemy.EnemyState _currentStateType;
+    private EnemyState _currentStateType;
 
-    public Enemy.EnemyState CurrentStateType => _currentStateType;
+    public EnemyState CurrentStateType => _currentStateType;
 
     /// <summary>
     /// 상태 머신을 초기화합니다.
     /// </summary>
-    public void Initialize(Dictionary<Enemy.EnemyState, IEnemyState> states)
+    public void Initialize(Dictionary<EnemyState, IEnemyState> states)
     {
         _states = states;
         SetState(_initialState);
@@ -37,7 +37,7 @@ public class EnemyStateMachine : MonoBehaviour
     /// <summary>
     /// 상태를 변경합니다.
     /// </summary>
-    public void SetState(Enemy.EnemyState newStateType)
+    public void SetState(EnemyState newStateType)
     {
         // 상태가 같고 이미 초기화된 상태인 경우에만 변경하지 않음
         if (_currentState != null && _currentStateType == newStateType)

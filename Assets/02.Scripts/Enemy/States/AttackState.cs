@@ -64,12 +64,12 @@ public class AttackState : IEnemyState
 
         if (distanceToPlayer > _enemy.AttackDistance * 1.2f) // 약간의 여유를 두고 추적으로 전환
         {
-            _enemy.SetState(Enemy.EnemyState.Trace);
+            _enemy.SetState(EnemyState.Trace);
         }
         else if (!_enemy.IsTargetInSight(_enemy.Player.transform.position, 120f, _enemy.AttackDistance * 1.5f))
         {
             // 시야에서 벗어난 경우
-            _enemy.SetState(Enemy.EnemyState.Trace);
+            _enemy.SetState(EnemyState.Trace);
         }
     }
 
@@ -82,7 +82,7 @@ public class AttackState : IEnemyState
             // 플레이어가 없는 경우 처리
             if (_enemy.Player == null)
             {
-                _enemy.SetState(Enemy.EnemyState.Idle);
+                _enemy.SetState(EnemyState.Idle);
                 yield break;
             }
 

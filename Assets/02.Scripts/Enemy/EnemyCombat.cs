@@ -27,7 +27,7 @@ public class EnemyCombat : MonoBehaviour
 
     private void Update()
     {
-        if (_enemy.GetComponent<EnemyStateMachine>().CurrentStateType == Enemy.EnemyState.Attack)
+        if (_enemy.GetComponent<EnemyStateMachine>().CurrentStateType == EnemyState.Attack)
         {
             _attackCooldownTimer += Time.deltaTime;
         }
@@ -57,7 +57,7 @@ public class EnemyCombat : MonoBehaviour
         {
             _currentHealth = 0;
             _isDead = true;
-            _enemy.SetState(Enemy.EnemyState.Die);
+            _enemy.SetState(EnemyState.Die);
         }
     }
 

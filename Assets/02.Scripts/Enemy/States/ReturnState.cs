@@ -51,14 +51,14 @@ public class ReturnState : IEnemyState
 
         if (_enemy.HasReachedDestination(_enemy.StartPosition) && _enemy.CharacterController.isGrounded)
         {
-            _enemy.SetState(Enemy.EnemyState.Idle);
+            _enemy.SetState(EnemyState.Idle);
         }
         else if (distanceToPlayer < _enemy.FindDistance)
         {
             // 시야 내에 플레이어가 있는지 확인
             if (_enemy.IsTargetInSight(_enemy.Player.transform.position, 120f, _enemy.FindDistance))
             {
-                _enemy.SetState(Enemy.EnemyState.Trace);
+                _enemy.SetState(EnemyState.Trace);
             }
         }
     }
@@ -72,7 +72,7 @@ public class ReturnState : IEnemyState
             Vector3 safePosition = NavMeshUtility.GetNavMeshPosition(_enemy.StartPosition);
             _enemy.transform.position = safePosition;
             _enemy.transform.rotation = _enemy.StartRotation;
-            _enemy.SetState(Enemy.EnemyState.Idle);
+            _enemy.SetState(EnemyState.Idle);
             yield break;
         }
 
@@ -94,7 +94,7 @@ public class ReturnState : IEnemyState
                 Vector3 safePosition = NavMeshUtility.GetNavMeshPosition(_enemy.StartPosition);
                 _enemy.transform.position = safePosition;
                 _enemy.transform.rotation = _enemy.StartRotation;
-                _enemy.SetState(Enemy.EnemyState.Idle);
+                _enemy.SetState(EnemyState.Idle);
                 yield break;
             }
 
@@ -110,7 +110,7 @@ public class ReturnState : IEnemyState
             // 유틸리티 메서드를 사용하여 목적지 도달 여부 확인
             if (_enemy.HasReachedDestination(_enemy.StartPosition, _enemy.Agent.stoppingDistance))
             {
-                _enemy.SetState(Enemy.EnemyState.Idle);
+                _enemy.SetState(EnemyState.Idle);
                 yield break;
             }
 
