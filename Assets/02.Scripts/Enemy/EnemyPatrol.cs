@@ -1,7 +1,8 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.AI;
 
-[RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(NavMeshAgent))]
 public class EnemyPatrol : MonoBehaviour
 {
     #region 직렬화 필드
@@ -9,11 +10,11 @@ public class EnemyPatrol : MonoBehaviour
     [SerializeField] private Transform[] _waypoints;
     [SerializeField] private float _waitTime = 2f;
     [SerializeField] private float _rotationSpeed = 5f;
+    [SerializeField] private float _stoppingDistance = 0.1f;
     #endregion
 
     #region 비공개 필드
-    private CharacterController _characterController;
-    private float _currentMoveSpeed;
+    private NavMeshAgent _navMeshAgent;
     private int _currentWaypointIndex = 0;
     private bool _isPatrolling = false;
     private Coroutine _patrolCoroutine;
@@ -26,24 +27,20 @@ public class EnemyPatrol : MonoBehaviour
     public bool HasWaypoints => _waypoints != null && _waypoints.Length > 0;
     #endregion
 
-    #region 비공개 메서드
-    private IEnumerator Patrol_Coroutine()
+    #region 코루틴
+    private IEnumerator PatrolCoroutine()
     {
         while (_isPatrolling)
         {
-            // CharacterController 유효성 검사
-            if (_characterController == null || !_characterController.enabled || !_characterController.gameObject.activeInHierarchy)
+            // NavMeshAgent 유효성 검사
+            if (!NavMeshUtility.IsAgentValid(_navMeshAgent))
             {
-                Debug.LogWarning("순찰 중 CharacterController가 유효하지 않아 순찰을 중지합니다.");
-                StopPatrolInternal(); // 내부 중지 함수 호출
+                StopPatrolInternal();
                 yield break;
             }
 
-            Vector3 direction = (_targetPosition - transform.position);
-            direction.y = 0; // Y축 이동 무시
-
             // 목표 지점 도달 체크
-            if (direction.magnitude < _characterController.radius)
+            if (NavMeshUtility.HasReachedDestination(_navMeshAgent, _targetPosition, _stoppingDistance))
             {
                 // 대기 시간 전에 순찰 중지 여부 확인
                 if (!_isPatrolling) yield break;
@@ -54,9 +51,18 @@ public class EnemyPatrol : MonoBehaviour
                 // 목표 지점 도달 후 처리
                 if (_isSinglePointPatrol)
                 {
-                    // 단일 지점 순찰: 목표 도달 후 추가 행동 없음 (계속 대기 상태 유지)
+                    // 단일 지점 순찰인 경우 제자리에서 회전 또는 대기
+                    _navMeshAgent.isStopped = true;
+                    yield return new WaitForSeconds(_waitTime);
+
+                    // 계속 순찰해야 한다면 다시 같은 위치로 이동 시도
+                    if (_isPatrolling)
+                    {
+                        _navMeshAgent.isStopped = false;
+                        NavMeshUtility.TrySetDestination(_navMeshAgent, _targetPosition);
+                    }
                 }
-                else // 일반 웨이포인트 순찰
+                else
                 {
                     // 다음 웨이포인트 설정
                     _currentWaypointIndex = (_currentWaypointIndex + 1) % _waypoints.Length;
@@ -64,27 +70,13 @@ public class EnemyPatrol : MonoBehaviour
 
                     // 다음 웨이포인트 설정 후 순찰 중지 여부 확인
                     if (!_isPatrolling) yield break;
-                }
-            }
-            // 목표 지점으로 이동 및 회전
-            else
-            {
-                // 이동 전에 순찰 중지 여부 확인
-                if (!_isPatrolling) yield break;
 
-                // 이동 계산 및 적용
-                Vector3 move = direction.normalized * _currentMoveSpeed * Time.deltaTime;
-                // 중력 적용
-                _characterController.Move(move + Physics.gravity * Time.deltaTime);
-
-                // 회전 전에 순찰 중지 여부 확인
-                if (!_isPatrolling) yield break;
-
-                // 목표 방향으로 회전 (0벡터가 아닐 때만)
-                if (direction != Vector3.zero)
-                {
-                    Quaternion targetRotation = Quaternion.LookRotation(direction);
-                    transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, _rotationSpeed * Time.deltaTime);
+                    // 다음 목적지 설정
+                    bool success = NavMeshUtility.TrySetDestination(_navMeshAgent, _targetPosition);
+                    if (!success && Debug.isDebugBuild)
+                    {
+                        Debug.LogWarning($"다음 웨이포인트({_currentWaypointIndex})로 경로 설정 실패");
+                    }
                 }
             }
 
@@ -92,27 +84,28 @@ public class EnemyPatrol : MonoBehaviour
             yield return null;
         }
     }
+    #endregion
 
+    #region 비공개 메서드
     /// <summary>
     /// 내부적으로 순찰을 중지하고 상태를 정리하는 메서드.
     /// Coroutine 내부 또는 외부 StopPatrol에서 호출됩니다.
     /// </summary>
     private void StopPatrolInternal()
     {
-        if (!_isPatrolling) return; // 이미 중지된 경우 무시
+        _isPatrolling = false;
 
-        _isPatrolling = false; // 순찰 상태 플래그 비활성화
-
-        // 코루틴이 실행 중이면 중지
         if (_patrolCoroutine != null)
         {
             StopCoroutine(_patrolCoroutine);
             _patrolCoroutine = null;
         }
 
-        // CharacterController 참조 해제
-        _characterController = null;
-        // Debug.Log("Patrol Stopped Internally"); // 디버깅 로그 (필요시 활성화)
+        if (NavMeshUtility.IsAgentValid(_navMeshAgent))
+        {
+            _navMeshAgent.isStopped = true;
+            _navMeshAgent.ResetPath();
+        }
     }
     #endregion
 
@@ -120,20 +113,23 @@ public class EnemyPatrol : MonoBehaviour
     /// <summary>
     /// 순찰을 시작하거나 재개합니다. Enemy 스크립트에서 호출됩니다.
     /// </summary>
-    /// <param name="controller">이동에 사용할 CharacterController</param>
+    /// <param name="agent">이동에 사용할 NavMeshAgent</param>
     /// <param name="moveSpeed">순찰 시 사용할 이동 속도</param>
     /// <param name="startPositionOverride">웨이포인트가 없을 경우 이동할 목표 지점 (보통 Enemy의 시작 위치)</param>
-    public void StartPatrol(CharacterController controller, float moveSpeed, Vector3? startPositionOverride = null)
+    public void StartPatrol(NavMeshAgent agent, float moveSpeed, Vector3? startPositionOverride = null)
     {
         if (_isPatrolling) return; // 이미 순찰 중이면 무시
 
-        _characterController = controller;
-        if (_characterController == null)
+        _navMeshAgent = agent;
+        if (!NavMeshUtility.IsAgentValid(_navMeshAgent))
         {
-            Debug.LogError("StartPatrol: CharacterController가 제공되지 않았습니다!");
+            Debug.LogError("StartPatrol: 유효한 NavMeshAgent가 제공되지 않았습니다!");
             return;
         }
-        _currentMoveSpeed = moveSpeed;
+
+        // NavMeshAgent 설정
+        _navMeshAgent.speed = moveSpeed;
+        _navMeshAgent.isStopped = false;
 
         _isSinglePointPatrol = false; // 단일 지점 순찰 플래그 초기화
 
@@ -144,6 +140,29 @@ public class EnemyPatrol : MonoBehaviour
             {
                 _targetPosition = startPositionOverride.Value;
                 _isSinglePointPatrol = true; // 단일 지점 순찰 모드 활성화
+
+                // NavMesh 상의 유효한 위치 확인
+                Vector3 validPosition = NavMeshUtility.GetNavMeshPosition(_targetPosition);
+
+                // NavMesh에 유효한 위치가 없다면 현재 위치 사용
+                if (validPosition == _targetPosition)
+                {
+                    validPosition = NavMeshUtility.GetNavMeshPosition(_navMeshAgent.transform.position);
+                    if (Debug.isDebugBuild)
+                    {
+                        Debug.LogWarning($"제공된 위치가 NavMesh 상에 없어서 현재 위치({validPosition})를 사용합니다.");
+                    }
+                }
+
+                _targetPosition = validPosition;
+
+                // 목적지 설정
+                bool success = NavMeshUtility.TrySetDestination(_navMeshAgent, _targetPosition);
+                if (!success)
+                {
+                    Debug.LogWarning($"NavMeshAgent가 목적지({_targetPosition})로 경로를 찾을 수 없습니다.");
+                    return; // 순찰 시작 불가
+                }
             }
             else
             {
@@ -156,6 +175,49 @@ public class EnemyPatrol : MonoBehaviour
             // 첫 번째 웨이포인트 설정
             _currentWaypointIndex = 0;
             _targetPosition = _waypoints[_currentWaypointIndex].position;
+
+            // NavMesh 상의 유효한 위치 확인
+            Vector3 validPosition = NavMeshUtility.GetNavMeshPosition(_targetPosition);
+            if (validPosition == _targetPosition)
+            {
+                if (Debug.isDebugBuild)
+                {
+                    Debug.LogWarning("웨이포인트가 NavMesh 상에 없습니다. 다음 웨이포인트로 시도합니다.");
+                }
+
+                // 다른 웨이포인트 시도
+                bool foundValid = false;
+                for (int i = 1; i < _waypoints.Length; i++)
+                {
+                    _currentWaypointIndex = i;
+                    _targetPosition = _waypoints[i].position;
+                    validPosition = NavMeshUtility.GetNavMeshPosition(_targetPosition);
+                    if (validPosition != _targetPosition)
+                    {
+                        foundValid = true;
+                        _targetPosition = validPosition;
+                        break;
+                    }
+                }
+
+                if (!foundValid)
+                {
+                    Debug.LogError("유효한 웨이포인트를 찾을 수 없습니다. 순찰을 시작할 수 없습니다.");
+                    return; // 순찰 시작 불가
+                }
+            }
+            else
+            {
+                _targetPosition = validPosition;
+            }
+
+            // 목적지 설정
+            bool success = NavMeshUtility.TrySetDestination(_navMeshAgent, _targetPosition);
+            if (!success)
+            {
+                Debug.LogWarning("NavMeshAgent가 웨이포인트로 경로를 찾을 수 없습니다.");
+                return; // 순찰 시작 불가
+            }
         }
 
         _isPatrolling = true; // 순찰 상태 플래그 활성화
@@ -165,8 +227,7 @@ public class EnemyPatrol : MonoBehaviour
             StopCoroutine(_patrolCoroutine);
         }
         // 순찰 코루틴 시작
-        _patrolCoroutine = StartCoroutine(Patrol_Coroutine());
-        // Debug.Log("Patrol Started"); // 디버깅 로그 (필요시 활성화)
+        _patrolCoroutine = StartCoroutine(PatrolCoroutine());
     }
 
     /// <summary>
@@ -174,12 +235,19 @@ public class EnemyPatrol : MonoBehaviour
     /// </summary>
     public void StopPatrol()
     {
-        // Debug.Log("StopPatrol Called Externally"); // 디버깅 로그 (필요시 활성화)
         StopPatrolInternal(); // 내부 중지 함수 호출
+    }
+
+    /// <summary>
+    /// 현재 순찰 목표 위치를 반환합니다.
+    /// </summary>
+    public Vector3 GetCurrentTargetPosition()
+    {
+        return _targetPosition;
     }
     #endregion
 
-    #region Unity 이벤트 함수
+    #region Gizmos 이벤트 함수
     // Gizmos를 사용하여 순찰 경로 시각화 (Editor에서만 보임)
     private void OnDrawGizmosSelected()
     {
