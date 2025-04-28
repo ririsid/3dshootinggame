@@ -4,6 +4,11 @@
 public enum EnemyType
 {
     /// <summary>
+    /// 정적 타입: 가만히 서있는 타입
+    /// </summary>
+    Static,
+
+    /// <summary>
     /// 순찰 타입: 지정된 경로를 따라 순찰하는 타입
     /// </summary>
     Patrol,

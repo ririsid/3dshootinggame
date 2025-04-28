@@ -210,7 +210,6 @@ GameObject:
   - component: {fileID: 8830917560071265035}
   - component: {fileID: 6723192849360486266}
   - component: {fileID: 1282619292595912834}
-  - component: {fileID: 4963043511932881422}
   - component: {fileID: 3067419257947985488}
   - component: {fileID: 7612807472078820943}
   - component: {fileID: 1965950295755189327}
@@ -394,25 +393,6 @@ MonoBehaviour:
   _attackPositionUpdateInterval: 0.5
   _deathDuration: 1
   _enemyType: 0
---- !u!114 &4963043511932881422
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3925324993792559665}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f50bc75672779684db75e2ca87a4dc8e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _waypoints:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  _waitTime: 2
-  _rotationSpeed: 5
-  _stoppingDistance: 0.1
 --- !u!114 &3067419257947985488
 MonoBehaviour:
   m_ObjectHideFlags: 0
