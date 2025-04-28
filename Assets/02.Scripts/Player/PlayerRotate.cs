@@ -81,16 +81,4 @@ public class PlayerRotate : MonoBehaviour
         // 플레이어는 Y축 회전만 적용
         transform.eulerAngles = new Vector3(0f, _rotationX, 0f);
     }
-
-    /// <summary>
-    /// 회전값을 직접 설정합니다.
-    /// </summary>
-    /// <param name="rotation">적용할 회전값(X: 좌우, Y: 상하)</param>
-    public void SetRotation(Vector2 rotation)
-    {
-        _rotationX = rotation.x;
-        _rotationY = rotation.y;
-        UpdatePlayerRotation();
-        CameraEvents.RaisePlayerRotationInput(new Vector2(_rotationX, _rotationY));
-    }
 }

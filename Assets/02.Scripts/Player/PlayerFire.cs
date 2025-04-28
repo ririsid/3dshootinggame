@@ -389,8 +389,8 @@ public class PlayerFire : MonoBehaviour
             {
                 Damage damage = new()
                 {
-                    Value = _bulletDamage,
-                    From = gameObject
+                    Amount = _bulletDamage,
+                    Source = gameObject
                 };
                 damageable.TakeDamage(damage);
             }

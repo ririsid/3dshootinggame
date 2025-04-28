@@ -4699,6 +4699,11 @@ MonoBehaviour:
   _bulletEffectPrefab: {fileID: 2256102015677452723, guid: fb1141a5364e4ce48aa2af09175c41cf, type: 3}
   _bulletEffectDuration: 1.5
   _bulletEffectPoolSize: 10
+  _shootableLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  _maxShootDistance: 1000
+  _showDebugRays: 1
   _bombPrefab: {fileID: 3175025184163702015, guid: 320d9f65c121d524fa1cdba937633c56, type: 3}
   _initialPoolSize: 5
 --- !u!114 &1964264926
@@ -5515,7 +5520,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7886869130487516695, guid: e50c3b501725985418977b09089e7371, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
