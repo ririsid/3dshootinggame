@@ -30,7 +30,7 @@ public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
                 if (_instance == null)
                 {
                     // 씬에서 기존 인스턴스 검색
-                    _instance = (T)FindObjectOfType(typeof(T));
+                    _instance = (T)FindFirstObjectByType(typeof(T));
 
                     // 씬에 없으면 새로 생성
                     if (_instance == null)
@@ -73,5 +73,13 @@ public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     protected virtual void OnApplicationQuit()
     {
         _isApplicationQuitting = true;
+    }
+
+    // 게임 시작 시 정적 변수 초기화
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticValues()
+    {
+        _isApplicationQuitting = false;
+        _instance = null;
     }
 }

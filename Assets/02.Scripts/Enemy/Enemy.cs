@@ -296,7 +296,8 @@ public class Enemy : MonoBehaviour, IDamageable
     public void CompleteDeath()
     {
         // 오브젝트 비활성화 전에 필요한 처리
-        // 예: 아이템 드롭, 경험치 지급 등
+        // 사망 이벤트 발생
+        OnDeath?.Invoke(gameObject);
 
         // 오브젝트 비활성화
         gameObject.SetActive(false);
@@ -350,4 +351,8 @@ public class Enemy : MonoBehaviour, IDamageable
         );
     }
     #endregion
+
+    // 이벤트 위임 추가 (클래스 내부 상단에 추가)
+    public delegate void EnemyDeathHandler(GameObject enemy);
+    public event EnemyDeathHandler OnDeath;
 }
