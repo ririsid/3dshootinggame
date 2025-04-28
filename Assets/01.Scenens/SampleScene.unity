@@ -1572,8 +1572,9 @@ MonoBehaviour:
   _mainCamera: {fileID: 330585545}
   _minimapCamera: {fileID: 681484292}
   _targetPlayer: {fileID: 1964264920}
-  _fpsPositionOffset: {x: 0, y: 0.5, z: 0.5}
-  _tpsPositionOffset: {x: 2, y: 1, z: -3.5}
+  _fpsPositionTransform: {fileID: 620588707}
+  _tpsPositionTransform: {fileID: 1006112951}
+  _quarterPositionTransform: {fileID: 968286556}
   _transitionSpeed: 5
   _useSmoothing: 0
   _smoothTime: 0.2
@@ -4530,7 +4531,6 @@ GameObject:
   - component: {fileID: 1964264919}
   - component: {fileID: 1964264918}
   - component: {fileID: 1964264923}
-  - component: {fileID: 1964264921}
   - component: {fileID: 1964264926}
   - component: {fileID: 1964264924}
   - component: {fileID: 1964264922}
@@ -4614,21 +4614,6 @@ Transform:
   - {fileID: 881612156}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1964264921
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1964264916}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab1a7b43488bb5a4f8e305e7ba041024, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _rotationSpeed: 100
-  _minVerticalAngle: -90
-  _maxVerticalAngle: 90
 --- !u!114 &1964264922
 MonoBehaviour:
   m_ObjectHideFlags: 0

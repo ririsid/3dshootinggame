@@ -11,8 +11,9 @@ public class CameraManager : Singleton<CameraManager>
 
     [Header("카메라 위치 설정")]
     [SerializeField] private Transform _targetPlayer;
-    [SerializeField] private Vector3 _fpsPositionOffset = new Vector3(0f, 0.5f, 0.5f); // 기본 FPS 오프셋 (눈 높이)
-    [SerializeField] private Vector3 _tpsPositionOffset = new Vector3(1.5f, 1f, -3.5f); // 기본 TPS 오프셋 (뒤쪽 어깨 위)
+    [SerializeField] private Transform _fpsPositionTransform; // FPS 시점 위치를 지정하는 Transform
+    [SerializeField] private Transform _tpsPositionTransform; // TPS 시점 위치를 지정하는 Transform
+    [SerializeField] private Transform _quarterPositionTransform; // 쿼터뷰 시점 위치를 지정하는 Transform
 
     [Header("카메라 전환 설정")]
     [SerializeField] private float _transitionSpeed = 5f;
@@ -20,8 +21,8 @@ public class CameraManager : Singleton<CameraManager>
     [SerializeField] private float _smoothTime = 0.2f;
 
     private CameraEvents.CameraMode _currentMode = CameraEvents.CameraMode.FPS;
-    private Vector3 _currentPositionOffset;
     private Vector3 _cameraVelocity = Vector3.zero;
+    private Transform _currentPositionTransform;
 
     #region 프로퍼티
     /// <summary>
@@ -38,8 +39,8 @@ public class CameraManager : Singleton<CameraManager>
         if (_mainCamera == null)
             _mainCamera = Camera.main;
 
-        // 초기 위치 오프셋 설정
-        _currentPositionOffset = _fpsPositionOffset;
+        // 초기 위치 트랜스폼 설정
+        _currentPositionTransform = _fpsPositionTransform;
     }
 
     private void Start()
@@ -53,6 +54,9 @@ public class CameraManager : Singleton<CameraManager>
             else
                 Debug.LogError("[CameraManager] 플레이어를 찾을 수 없습니다.");
         }
+
+        // Transform 참조 확인
+        ValidateTransformReferences();
 
         // 초기 모드 설정
         SetCameraMode(CameraEvents.CameraMode.FPS);
@@ -82,6 +86,10 @@ public class CameraManager : Singleton<CameraManager>
         {
             SetCameraMode(CameraEvents.CameraMode.TPS);
         }
+        else if (Input.GetKeyDown(KeyCode.Alpha0))
+        {
+            SetCameraMode(CameraEvents.CameraMode.Quarter);
+        }
     }
     #endregion
 
@@ -95,13 +103,17 @@ public class CameraManager : Singleton<CameraManager>
         _currentMode = mode;
         Debug.Log($"[CameraManager] 카메라 모드 변경: {mode}");
 
+        // 모드에 따른 Transform 설정
         switch (mode)
         {
             case CameraEvents.CameraMode.FPS:
-                _currentPositionOffset = _fpsPositionOffset;
+                _currentPositionTransform = _fpsPositionTransform;
                 break;
             case CameraEvents.CameraMode.TPS:
-                _currentPositionOffset = _tpsPositionOffset;
+                _currentPositionTransform = _tpsPositionTransform;
+                break;
+            case CameraEvents.CameraMode.Quarter:
+                _currentPositionTransform = _quarterPositionTransform;
                 break;
         }
 
@@ -110,6 +122,21 @@ public class CameraManager : Singleton<CameraManager>
 
         // 카메라 모드 변경 이벤트 발생
         CameraEvents.RaiseCameraModeChanged(mode);
+    }
+
+    /// <summary>
+    /// Transform 참조가 유효한지 검사하고 누락된 경우 경고 로그를 출력합니다.
+    /// </summary>
+    private void ValidateTransformReferences()
+    {
+        if (_fpsPositionTransform == null)
+            Debug.LogWarning("[CameraManager] FPS 위치 Transform이 설정되지 않았습니다. 카메라 변환이 제대로 작동하지 않을 수 있습니다.");
+
+        if (_tpsPositionTransform == null)
+            Debug.LogWarning("[CameraManager] TPS 위치 Transform이 설정되지 않았습니다. 카메라 변환이 제대로 작동하지 않을 수 있습니다.");
+
+        if (_quarterPositionTransform == null)
+            Debug.LogWarning("[CameraManager] 쿼터뷰 위치 Transform이 설정되지 않았습니다. 카메라 변환이 제대로 작동하지 않을 수 있습니다.");
     }
 
     /// <summary>
@@ -130,11 +157,11 @@ public class CameraManager : Singleton<CameraManager>
     /// </summary>
     private void UpdateCameraPosition()
     {
-        if (_targetPlayer == null || _mainCamera == null)
+        if (_targetPlayer == null || _mainCamera == null || _currentPositionTransform == null)
             return;
 
-        // 플레이어의 회전에 따라 오프셋 위치를 계산
-        Vector3 targetPosition = CalculateTargetPosition();
+        // 현재 카메라 Transform의 위치를 가져옴
+        Vector3 targetPosition = _currentPositionTransform.position;
 
         if (_useSmoothing)
         {
@@ -145,22 +172,19 @@ public class CameraManager : Singleton<CameraManager>
                 ref _cameraVelocity,
                 _smoothTime
             );
+
+            // 부드러운 회전
+            _mainCamera.transform.rotation = Quaternion.Slerp(
+                _mainCamera.transform.rotation,
+                _currentPositionTransform.rotation,
+                Time.deltaTime * _transitionSpeed
+            );
         }
         else
         {
             // 즉시 전환
             _mainCamera.transform.position = targetPosition;
         }
-    }
-
-    /// <summary>
-    /// 플레이어 위치와 로컬 오프셋을 기반으로 카메라의 목표 위치를 계산합니다.
-    /// </summary>
-    /// <returns>계산된 목표 위치</returns>
-    private Vector3 CalculateTargetPosition()
-    {
-        // 플레이어의 로컬 좌표계를 기준으로 카메라 위치 계산
-        return _targetPlayer.position + _targetPlayer.TransformDirection(_currentPositionOffset);
     }
     #endregion
 }

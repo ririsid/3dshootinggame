@@ -21,8 +21,9 @@ public static class CameraEvents
     /// </summary>
     public enum CameraMode
     {
-        FPS,    // 1인칭 시점
-        TPS     // 3인칭 시점
+        FPS,     // 1인칭 시점
+        TPS,     // 3인칭 시점
+        Quarter  // 쿼터뷰 시점
     }
 
     /// <summary>
