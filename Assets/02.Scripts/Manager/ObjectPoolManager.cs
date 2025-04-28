@@ -4,25 +4,8 @@ using UnityEngine;
 /// <summary>
 /// 오브젝트 풀링을 관리하는 매니저 클래스
 /// </summary>
-public class ObjectPoolManager : MonoBehaviour
+public class ObjectPoolManager : Singleton<ObjectPoolManager>
 {
-    #region 싱글톤
-    private static ObjectPoolManager _instance;
-    public static ObjectPoolManager Instance
-    {
-        get
-        {
-            if (_instance == null)
-            {
-                GameObject obj = new GameObject("ObjectPoolManager");
-                _instance = obj.AddComponent<ObjectPoolManager>();
-                DontDestroyOnLoad(obj);
-            }
-            return _instance;
-        }
-    }
-    #endregion
-
     #region 필드
     // 풀링할 오브젝트 종류별로 딕셔너리 관리
     private Dictionary<string, Queue<GameObject>> _poolDictionary = new Dictionary<string, Queue<GameObject>>();
@@ -37,16 +20,9 @@ public class ObjectPoolManager : MonoBehaviour
     #endregion
 
     #region Unity 이벤트 함수
-    private void Awake()
+    protected override void Awake()
     {
-        if (_instance != null && _instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        _instance = this;
-        DontDestroyOnLoad(gameObject);
+        base.Awake();
 
         // 풀의 루트 객체 생성
         _poolRoot = new GameObject("PoolRoot").transform;
