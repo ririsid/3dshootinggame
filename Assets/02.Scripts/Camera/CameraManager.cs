@@ -23,6 +23,8 @@ public class CameraManager : Singleton<CameraManager>
     private CameraEvents.CameraMode _currentMode = CameraEvents.CameraMode.FPS;
     private Vector3 _cameraVelocity = Vector3.zero;
     private Transform _currentPositionTransform;
+    private bool _isTransitioning = false; // 카메라 전환 중인지 추적
+    private Vector3 _targetPosition; // 카메라 목표 위치
 
     #region 프로퍼티
     /// <summary>
@@ -60,6 +62,8 @@ public class CameraManager : Singleton<CameraManager>
 
         // 초기 모드 설정
         SetCameraMode(CameraEvents.CameraMode.FPS);
+        // 초기 설정은 즉시 적용 (전환 효과 없음)
+        _isTransitioning = false;
     }
 
     private void LateUpdate()
@@ -100,6 +104,10 @@ public class CameraManager : Singleton<CameraManager>
     /// <param name="mode">변경할 카메라 모드</param>
     public void SetCameraMode(CameraEvents.CameraMode mode)
     {
+        // 같은 모드로 변경할 경우 무시
+        if (_currentMode == mode)
+            return;
+
         _currentMode = mode;
         Debug.Log($"[CameraManager] 카메라 모드 변경: {mode}");
 
@@ -116,6 +124,9 @@ public class CameraManager : Singleton<CameraManager>
                 _currentPositionTransform = _quarterPositionTransform;
                 break;
         }
+
+        // 전환 시작 플래그 설정
+        _isTransitioning = true;
 
         // 미니맵 카메라 설정 업데이트
         UpdateMinimapCamera();
@@ -160,30 +171,69 @@ public class CameraManager : Singleton<CameraManager>
         if (_targetPlayer == null || _mainCamera == null || _currentPositionTransform == null)
             return;
 
-        // 현재 카메라 Transform의 위치를 가져옴
-        Vector3 targetPosition = _currentPositionTransform.position;
-
-        if (_useSmoothing)
+        // 목표 위치 계산
+        if (_currentMode == CameraEvents.CameraMode.Quarter)
         {
-            // 부드러운 전환
-            _mainCamera.transform.position = Vector3.SmoothDamp(
-                _mainCamera.transform.position,
-                targetPosition,
-                ref _cameraVelocity,
-                _smoothTime
-            );
-
-            // 부드러운 회전
-            _mainCamera.transform.rotation = Quaternion.Slerp(
-                _mainCamera.transform.rotation,
-                _currentPositionTransform.rotation,
-                Time.deltaTime * _transitionSpeed
+            _targetPosition = new Vector3(
+                _targetPlayer.position.x + _currentPositionTransform.position.x,
+                _currentPositionTransform.position.y,
+                _targetPlayer.position.z
             );
         }
         else
         {
-            // 즉시 전환
-            _mainCamera.transform.position = targetPosition;
+            _targetPosition = _currentPositionTransform.position;
+        }
+
+        // 전환 중일 때는 부드러운 이동 적용
+        if (_isTransitioning && _useSmoothing)
+        {
+            // SmoothDamp를 사용한 부드러운 전환
+            _mainCamera.transform.position = Vector3.SmoothDamp(
+                _mainCamera.transform.position,
+                _targetPosition,
+                ref _cameraVelocity,
+                _smoothTime
+            );
+
+            // 쿼터뷰일 경우 부드러운 회전 적용
+            if (_currentMode == CameraEvents.CameraMode.Quarter)
+            {
+                // 플레이어를 향하는 방향 벡터 계산
+                Vector3 lookDirection = _targetPlayer.position - _mainCamera.transform.position;
+                if (lookDirection != Vector3.zero)  // 방향 벡터가 0이 아닌지 확인
+                {
+                    // 현재 회전과 목표 회전 사이의 부드러운 보간
+                    Quaternion targetRotation = Quaternion.LookRotation(lookDirection);
+                    _mainCamera.transform.rotation = targetRotation;
+                }
+            }
+
+            // 전환이 거의 완료되었는지 확인 (위치 기준)
+            if (Vector3.Distance(_mainCamera.transform.position, _targetPosition) < 0.01f)
+            {
+                _isTransitioning = false;
+
+                // 정확한 위치로 설정
+                _mainCamera.transform.position = _targetPosition;
+
+                // 쿼터뷰인 경우 카메라가 플레이어를 정확히 바라보도록 설정
+                if (_currentMode == CameraEvents.CameraMode.Quarter)
+                {
+                    _mainCamera.transform.LookAt(_targetPlayer.position);
+                }
+            }
+        }
+        // 전환 중이 아니거나 스무딩을 사용하지 않을 때는 즉시 위치 적용
+        else
+        {
+            _mainCamera.transform.position = _targetPosition;
+
+            // 쿼터뷰일 경우 플레이어를 바라보도록 설정
+            if (_currentMode == CameraEvents.CameraMode.Quarter)
+            {
+                _mainCamera.transform.LookAt(_targetPlayer.position);
+            }
         }
     }
     #endregion

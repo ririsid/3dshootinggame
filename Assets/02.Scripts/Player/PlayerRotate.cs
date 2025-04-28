@@ -49,7 +49,7 @@ public class PlayerRotate : MonoBehaviour
     /// <param name="mode">변경된 카메라 모드</param>
     private void OnCameraModeChanged(CameraEvents.CameraMode mode)
     {
-        _isEnabled = true; // 모든 모드에서 회전 활성화
+        _isEnabled = mode != CameraEvents.CameraMode.Quarter;
     }
 
     /// <summary>
