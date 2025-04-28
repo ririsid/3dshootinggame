@@ -1,28 +1,70 @@
 using UnityEngine;
 
+/// <summary>
+/// 카메라 회전을 담당하는 클래스입니다.
+/// </summary>
 public class CameraRotate : MonoBehaviour
 {
-    // 카메라 회전 스크립트
-    // 목표: 마우스를 조작하면 카메라를 그 방향으로 회전시키고 싶다.
+    [Header("회전 설정")]
+    [SerializeField] private float _smoothTime = 0.1f;
+    [SerializeField] private bool _useSmoothing = false;
 
-    public float RotationSpeed = 100f;
+    private Vector2 _targetRotation = Vector2.zero;
 
-    // 카메라 각도는 0도에서부터 시작한다고 기준을 세운다.
-    private float _rotationX = 0f;
-    private float _rotationY = 0f;
-
-    private void Update()
+    #region Unity 이벤트 함수
+    private void Start()
     {
-        // 1. 마우스 입력을 받는다.(마우스 커서의 움직임 방향)
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
+        // 초기 회전값 설정
+        Vector3 angles = transform.eulerAngles;
+        _targetRotation = new Vector2(angles.y, -angles.x);
+    }
 
-        // 2. 회전한 양만큼 누적시켜 나간다.
-        _rotationX += mouseX * RotationSpeed * Time.deltaTime;
-        _rotationY += mouseY * RotationSpeed * Time.deltaTime;
-        _rotationY = Mathf.Clamp(_rotationY, -90f, 90f); // Y축 회전 제한
+    private void OnEnable()
+    {
+        // 플레이어 회전 입력 이벤트 구독
+        CameraEvents.OnPlayerRotationInput += OnPlayerRotationInput;
+    }
 
-        // 3. 회전 방향으로 회전시킨다.
-        transform.eulerAngles = new Vector3(-_rotationY, _rotationX, 0f);
+    private void OnDisable()
+    {
+        // 이벤트 구독 해제
+        CameraEvents.OnPlayerRotationInput -= OnPlayerRotationInput;
+    }
+
+    private void LateUpdate()
+    {
+        // 카메라 회전 업데이트 (플레이어 업데이트 이후)
+        UpdateCameraRotation();
+    }
+    #endregion
+
+    /// <summary>
+    /// 플레이어 회전 입력 이벤트를 처리합니다.
+    /// </summary>
+    /// <param name="rotationInput">회전 입력값(X: 좌우, Y: 상하)</param>
+    private void OnPlayerRotationInput(Vector2 rotationInput)
+    {
+        _targetRotation = rotationInput;
+    }
+
+    /// <summary>
+    /// 현재 회전값을 기준으로 카메라 회전을 업데이트합니다.
+    /// </summary>
+    private void UpdateCameraRotation()
+    {
+        if (_useSmoothing)
+        {
+            // 부드러운 회전 적용
+            Vector2 currentRotation = new Vector2(transform.eulerAngles.y, -transform.eulerAngles.x);
+            currentRotation.x = Mathf.LerpAngle(currentRotation.x, _targetRotation.x, Time.deltaTime * 1 / _smoothTime);
+            currentRotation.y = Mathf.LerpAngle(currentRotation.y, _targetRotation.y, Time.deltaTime * 1 / _smoothTime);
+
+            transform.eulerAngles = new Vector3(-currentRotation.y, currentRotation.x, 0f);
+        }
+        else
+        {
+            // 즉시 회전 적용
+            transform.eulerAngles = new Vector3(-_targetRotation.y, _targetRotation.x, 0f);
+        }
     }
 }
