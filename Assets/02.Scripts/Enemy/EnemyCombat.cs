@@ -42,7 +42,7 @@ public class EnemyCombat : MonoBehaviour
     {
         if (_isDead || _enemyEffects.IsDamaged) return;
 
-        _currentHealth -= damage.Value;
+        _currentHealth -= damage.Amount;
 
         // 개발 빌드에서만 로그 출력
         if (Debug.isDebugBuild)
@@ -51,7 +51,7 @@ public class EnemyCombat : MonoBehaviour
         }
 
         // 넉백 효과 적용
-        _enemyEffects.ApplyDamageEffect(damage.From.transform.position);
+        _enemyEffects.ApplyDamageEffect(damage.Source.transform.position);
 
         if (_currentHealth <= 0)
         {

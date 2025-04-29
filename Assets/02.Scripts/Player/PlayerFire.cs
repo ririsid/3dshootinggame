@@ -6,12 +6,19 @@ using UnityEngine.EventSystems;
 public class PlayerFire : MonoBehaviour
 {
     #region 필드
+    [Header("참조")]
+    [SerializeField] private PlayerStat _playerStat;
+    [SerializeField] private UI_CrosshairComponent _crosshairComponent;
+
     [Header("발사 설정")]
     [SerializeField] private GameObject _firePosition;
-    [SerializeField] private int _bulletDamage = 10; // 총알 피해량
+    [SerializeField] private int _bulletDamage = 10;
     [SerializeField] private ParticleSystem _bulletEffectPrefab;
-    [SerializeField] private float _bulletEffectDuration = 1.5f; // 총알 이펙트 지속 시간
-    [SerializeField] private int _bulletEffectPoolSize = 10;     // 총알 이펙트 풀 초기 크기
+    [SerializeField] private float _bulletEffectDuration = 1.5f;
+    [SerializeField] private int _bulletEffectPoolSize = 10;
+    [SerializeField] private LayerMask _shootableLayerMask = -1; // 발사 가능한 레이어 마스크
+    [SerializeField] private float _maxShootDistance = 1000f; // 최대 사거리
+    [SerializeField] private bool _showDebugRays = true; // 디버그 레이 표시 여부
 
     [Header("폭탄 설정")]
     [SerializeField] private GameObject _bombPrefab;
@@ -30,7 +37,6 @@ public class PlayerFire : MonoBehaviour
     // 총 발사 이벤트 추가
     public event Action OnWeaponFired; // 총이 발사될 때마다 호출
 
-    private PlayerStat _playerStat;
     private bool _isChargingBomb = false;
     private float _currentBombCharge = 0f;
     private bool _isBombPoolInitialized = false;
@@ -43,6 +49,13 @@ public class PlayerFire : MonoBehaviour
     // 재장전 관련 변수
     private bool _isReloading = false;
     private Coroutine _reloadCoroutine;
+
+    // 카메라 모드 저장 변수 추가
+    private CameraEvents.CameraMode _currentCameraMode = CameraEvents.CameraMode.FPS;
+
+    #region 쿼터뷰 모드 관련 필드
+    private Vector3 _crosshairWorldPosition = Vector3.zero; // 쿼터뷰 모드에서 크로스헤어의 월드 위치
+    #endregion
     #endregion
 
     #region 프로퍼티
@@ -52,18 +65,24 @@ public class PlayerFire : MonoBehaviour
     #endregion
 
     #region Unity 이벤트 함수
-    private void Awake()
-    {
-        _playerStat = GetComponent<PlayerStat>();
-        if (_playerStat == null)
-        {
-            Debug.LogError("PlayerStat 컴포넌트를 찾을 수 없습니다!", this);
-        }
-    }
-
     private void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
+        // PlayerStat 참조 유효성 검사
+        if (_playerStat == null)
+        {
+            Debug.LogError("PlayerStat 컴포넌트가 할당되지 않았습니다!", this);
+            return;
+        }
+
+        // 크로스헤어 컴포넌트 참조 유효성 검사
+        if (_crosshairComponent != null)
+        {
+            _crosshairComponent.SetPlayerTransform(transform);
+        }
+        else
+        {
+            Debug.LogWarning("UI_CrosshairComponent가 할당되지 않았습니다!", this);
+        }
 
         // 오브젝트 풀 초기화
         InitializeBombPool();
@@ -76,6 +95,9 @@ public class PlayerFire : MonoBehaviour
         // 이벤트 구독
         _playerStat.OnAmmoChanged += HandleAmmoChanged;
         _playerStat.OnReloadingChanged += HandleReloadingChanged;
+
+        // 카메라 모드 변경 이벤트 구독
+        CameraEvents.OnCameraModeChanged += HandleCameraModeChanged;
     }
 
     private void OnDestroy()
@@ -86,6 +108,9 @@ public class PlayerFire : MonoBehaviour
             _playerStat.OnAmmoChanged -= HandleAmmoChanged;
             _playerStat.OnReloadingChanged -= HandleReloadingChanged;
         }
+
+        // 카메라 모드 변경 이벤트 구독 해제
+        CameraEvents.OnCameraModeChanged -= HandleCameraModeChanged;
     }
 
     private void Update()
@@ -230,6 +255,14 @@ public class PlayerFire : MonoBehaviour
     }
 
     /// <summary>
+    /// 카메라 모드 변경 이벤트 핸들러
+    /// </summary>
+    private void HandleCameraModeChanged(CameraEvents.CameraMode mode)
+    {
+        _currentCameraMode = mode;
+    }
+
+    /// <summary>
     /// 총알 발사 처리
     /// </summary>
     private void Fire()
@@ -250,26 +283,166 @@ public class PlayerFire : MonoBehaviour
         // 다음 발사 가능 시간 설정
         _nextFireTime = Time.time + _playerStat.FireRate;
 
-        // 레이를 생성하고 발사 위치와 진행 방향을 설정
-        Ray ray = new Ray(_firePosition.transform.position, Camera.main.transform.forward);
-
-        // 레이와 부딛힌 물체의 정보를 저장할 변수를 생성
+        Vector3 targetPoint = Vector3.zero;
+        Vector3 fireDirection = Vector3.zero;
+        bool validTarget = false;
         RaycastHit hitInfo = new RaycastHit();
 
-        // 레이를 발사한 다음,
-        bool isHit = Physics.Raycast(ray, out hitInfo);
-        if (isHit) // 데이터가 있다면(부딛혔다면)
+        // 카메라 모드에 따라 레이캐스트 설정
+        if (_currentCameraMode == CameraEvents.CameraMode.Quarter)
         {
-            // 피격 이펙트 생성(표시) - 오브젝트 풀링 사용
+            // 쿼터뷰 모드: 크로스헤어 위치로 발사
+            fireDirection = (_crosshairWorldPosition - _firePosition.transform.position).normalized;
+
+            // 디버그 정보
+            if (_showDebugRays)
+            {
+                Debug.DrawLine(_firePosition.transform.position, _crosshairWorldPosition, Color.cyan, 1.0f);
+            }
+
+            // 총구에서 크로스헤어 방향으로 레이캐스트
+            if (Physics.Raycast(
+                _firePosition.transform.position,
+                fireDirection,
+                out RaycastHit quartersHit,
+                _maxShootDistance,
+                _shootableLayerMask))
+            {
+                targetPoint = quartersHit.point;
+                validTarget = true;
+                hitInfo = quartersHit;
+
+                if (_showDebugRays)
+                {
+                    Debug.DrawLine(_firePosition.transform.position, targetPoint, Color.green, 1.0f);
+                }
+            }
+            else
+            {
+                // 타겟이 없는 경우 크로스헤어 위치 또는 최대 거리까지
+                targetPoint = _firePosition.transform.position + fireDirection * _maxShootDistance;
+
+                if (_showDebugRays)
+                {
+                    Debug.DrawLine(_firePosition.transform.position, targetPoint, Color.red, 1.0f);
+                }
+            }
+        }
+        else if (_currentCameraMode == CameraEvents.CameraMode.FPS)
+        {
+            // FPS 모드: 기존 코드 유지
+            fireDirection = Camera.main.transform.forward;
+            RaycastHit gunRayHit;
+
+            if (Physics.Raycast(
+                _firePosition.transform.position,
+                fireDirection,
+                out gunRayHit,
+                _maxShootDistance,
+                _shootableLayerMask))
+            {
+                targetPoint = gunRayHit.point;
+                validTarget = true;
+                hitInfo = gunRayHit;
+
+                if (_showDebugRays)
+                {
+                    Debug.DrawLine(_firePosition.transform.position, gunRayHit.point, Color.green, 1.0f);
+                }
+            }
+            else
+            {
+                // 레이가 맞지 않은 경우, 최대 거리까지 표시
+                targetPoint = _firePosition.transform.position + fireDirection * _maxShootDistance;
+
+                if (_showDebugRays)
+                {
+                    Debug.DrawLine(_firePosition.transform.position, targetPoint, Color.red, 1.0f);
+                }
+            }
+        }
+        else
+        {
+            // TPS 모드: 기존 코드 유지
+            Ray screenRay = Camera.main.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+            RaycastHit screenHit;
+
+            if (Physics.Raycast(
+                screenRay,
+                out screenHit,
+                _maxShootDistance,
+                _shootableLayerMask))
+            {
+                // 화면 중앙 레이가 물체에 맞았을 때
+                targetPoint = screenHit.point;
+
+                if (_showDebugRays)
+                {
+                    // 카메라에서 타격 지점까지 디버그 레이
+                    Debug.DrawLine(screenRay.origin, targetPoint, Color.yellow, 1.0f);
+                }
+            }
+            else
+            {
+                // 화면 중앙 레이가 물체에 맞지 않았을 때, 최대 거리 사용
+                targetPoint = screenRay.origin + screenRay.direction * _maxShootDistance;
+
+                if (_showDebugRays)
+                {
+                    Debug.DrawLine(screenRay.origin, targetPoint, Color.blue, 1.0f);
+                }
+            }
+
+            // 총구에서 목표 지점까지의 방향 계산
+            fireDirection = (targetPoint - _firePosition.transform.position).normalized;
+
+            // 총구에서 계산된 방향으로 다시 레이캐스트
+            RaycastHit gunRayHit;
+
+            if (Physics.Raycast(
+                _firePosition.transform.position,
+                fireDirection,
+                out gunRayHit,
+                _maxShootDistance,
+                _shootableLayerMask))
+            {
+                // 총구에서 발사한 레이가 물체에 맞았을 때
+                targetPoint = gunRayHit.point;
+                validTarget = true;
+                hitInfo = gunRayHit;
+
+                if (_showDebugRays)
+                {
+                    // 총구에서 타격 지점까지 디버그 레이
+                    Debug.DrawLine(_firePosition.transform.position, targetPoint, Color.green, 1.0f);
+                }
+            }
+            else
+            {
+                // 총구에서 발사한 레이가 물체에 맞지 않았을 때
+                if (_showDebugRays)
+                {
+                    // 총구에서 최대 거리까지 디버그 레이
+                    Debug.DrawLine(_firePosition.transform.position,
+                                   _firePosition.transform.position + fireDirection * _maxShootDistance,
+                                   Color.red, 1.0f);
+                }
+            }
+        }
+
+        // 공통 처리 로직: 유효한 타격이 있을 때만 효과 생성 및 데미지 처리
+        if (validTarget)
+        {
+            // 피격 이펙트 생성
             CreateBulletHitEffect(hitInfo.point, hitInfo.normal);
 
-            // IDamageable 인터페이스를 가진 컴포넌트를 찾아서 피해를 줍니다.
+            // 대미지 처리
             if (hitInfo.collider.TryGetComponent<IDamageable>(out var damageable))
             {
                 Damage damage = new()
                 {
-                    Value = _bulletDamage,
-                    From = gameObject
+                    Amount = _bulletDamage,
+                    Source = gameObject
                 };
                 damageable.TakeDamage(damage);
             }
@@ -453,6 +626,22 @@ public class PlayerFire : MonoBehaviour
     {
         _playerStat.AddBomb(amount);
         Debug.Log($"폭탄 획득: 현재 개수 {_playerStat.CurrentBombCount}/{_playerStat.MaxBombCount}");
+    }
+
+    /// <summary>
+    /// 쿼터뷰 모드에서 크로스헤어의 월드 위치를 설정합니다.
+    /// </summary>
+    public void SetCrosshairWorldPosition(Vector3 position)
+    {
+        _crosshairWorldPosition = position;
+    }
+
+    /// <summary>
+    /// 크로스헤어의 현재 월드 위치를 반환합니다.
+    /// </summary>
+    public Vector3 GetCrosshairWorldPosition()
+    {
+        return _crosshairWorldPosition;
     }
     #endregion
 }

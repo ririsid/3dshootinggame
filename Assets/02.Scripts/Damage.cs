@@ -18,8 +18,8 @@ using UnityEngine;
 /// </summary>
 public struct Damage
 {
-    public int Value;
-    public GameObject From;
+    public int Amount;
+    public GameObject Source;
 }
 
 /// <summary>
