@@ -78,19 +78,18 @@ public class PlayerMove : MonoBehaviour
     #endregion
 
     #region 내부 참조
-    private PlayerStat _playerStat;
-    private CharacterController _characterController;
-    private PlayerInputHandler _inputHandler;
+    [Header("컴포넌트 참조")]
+    [SerializeField] private PlayerStat _playerStat;
+    [SerializeField] private CharacterController _characterController;
+    [SerializeField] private PlayerInputHandler _inputHandler;
     #endregion
 
-    private void Awake()
+    private void Start()
     {
-        _characterController = GetComponent<CharacterController>();
-        _playerStat = GetComponent<PlayerStat>();
-        _inputHandler = GetComponent<PlayerInputHandler>();
-
-        if (_playerStat == null) Debug.LogError("PlayerStat 컴포넌트를 찾을 수 없습니다!", this);
-        if (_inputHandler == null) Debug.LogError("PlayerInputHandler 컴포넌트를 찾을 수 없습니다!", this);
+        // 참조 유효성 검사
+        if (_playerStat == null) Debug.LogError("PlayerStat 컴포넌트가 할당되지 않았습니다!", this);
+        if (_characterController == null) Debug.LogError("CharacterController 컴포넌트가 할당되지 않았습니다!", this);
+        if (_inputHandler == null) Debug.LogError("PlayerInputHandler 컴포넌트가 할당되지 않았습니다!", this);
 
         InitializeMovementStats();
     }

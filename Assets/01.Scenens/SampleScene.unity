@@ -1065,7 +1065,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 1983
+    m_Bits: 4031
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -1907,7 +1907,7 @@ Camera:
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 1751
+    m_Bits: 3799
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 8400000, guid: 66e1521f0e440bb4fb214832451996cb, type: 2}
   m_TargetDisplay: 0
@@ -3541,7 +3541,7 @@ GameObject:
   - component: {fileID: 1442193872}
   - component: {fileID: 1442193871}
   - component: {fileID: 1442193870}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4627,7 +4627,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _wallLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 128
+  _playerStat: {fileID: 1964264924}
+  _characterController: {fileID: 1964264923}
+  _inputHandler: {fileID: 1964264926}
 --- !u!143 &1964264923
 CharacterController:
   m_ObjectHideFlags: 0
@@ -4678,6 +4681,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0b1d3c1638ade8498dd7d657587ca90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _playerStat: {fileID: 1964264924}
+  _crosshairComponent: {fileID: 2063180882}
   _firePosition: {fileID: 1140036843}
   _bulletDamage: 10
   _bulletEffectPrefab: {fileID: 2256102015677452723, guid: fb1141a5364e4ce48aa2af09175c41cf, type: 3}
@@ -4685,7 +4690,7 @@ MonoBehaviour:
   _bulletEffectPoolSize: 10
   _shootableLayerMask:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 3993
   _maxShootDistance: 1000
   _showDebugRays: 1
   _bombPrefab: {fileID: 3175025184163702015, guid: 320d9f65c121d524fa1cdba937633c56, type: 3}
@@ -4719,6 +4724,9 @@ MonoBehaviour:
   _rotationSpeed: 100
   _minVerticalAngle: -90
   _maxVerticalAngle: 90
+  _quarterViewRotationSpeed: 8
+  _crosshairComponent: {fileID: 2063180882}
+  _playerFire: {fileID: 1964264925}
 --- !u!1 &2004207040
 GameObject:
   m_ObjectHideFlags: 0
@@ -4882,7 +4890,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0, b: 0.78431374, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -4925,7 +4933,14 @@ MonoBehaviour:
   _returnDuration: 0.1
   _recoilEase: 6
   _returnEase: 7
+  _quarterViewRadius: 5
+  _smoothSpeed: 10
+  _edgeMargin: 50
+  _groundLayer:
+    serializedVersion: 2
+    m_Bits: 1024
   _playerFire: {fileID: 1964264925}
+  _playerTransform: {fileID: 1964264920}
 --- !u!1 &2126729821
 GameObject:
   m_ObjectHideFlags: 0
