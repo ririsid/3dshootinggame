@@ -20,6 +20,23 @@ public class MinimapCamera : MonoBehaviour
     private Camera _minimapCamera;
     private float _currentZoom;
 
+    #region 프로퍼티
+    /// <summary>
+    /// 미니맵 확대(줌인) 키 입력 감지
+    /// </summary>
+    private bool IsZoomInKeyPressed =>
+        Input.GetKeyDown(KeyCode.KeypadPlus) ||
+        (Input.GetKeyDown(KeyCode.Equals) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)));
+
+    /// <summary>
+    /// 미니맵 축소(줌아웃) 키 입력 감지
+    /// </summary>
+    private bool IsZoomOutKeyPressed =>
+        Input.GetKeyDown(KeyCode.KeypadMinus) ||
+        Input.GetKeyDown(KeyCode.Minus);
+    #endregion
+
+    #region Unity 이벤트 함수
     private void Awake()
     {
         _minimapCamera = GetComponent<Camera>();
@@ -29,6 +46,12 @@ public class MinimapCamera : MonoBehaviour
         }
         _currentZoom = _minimapCamera.orthographicSize; // 초기 줌 값 설정
         UpdateZoomButtonsState(); // 초기 버튼 상태 업데이트
+    }
+
+    private void Update()
+    {
+        // 키보드 입력 처리
+        ProcessKeyboardInput();
     }
 
     private void LateUpdate()
@@ -44,11 +67,26 @@ public class MinimapCamera : MonoBehaviour
             transform.rotation = Quaternion.Euler(90f, Target.eulerAngles.y, 0f);
         }
 
-
         // 줌 업데이트 (Orthographic 카메라일 경우)
         if (_minimapCamera.orthographic)
         {
             _minimapCamera.orthographicSize = _currentZoom;
+        }
+    }
+    #endregion
+
+    /// <summary>
+    /// 키보드 입력을 처리합니다.
+    /// </summary>
+    private void ProcessKeyboardInput()
+    {
+        if (IsZoomInKeyPressed)
+        {
+            ZoomIn();
+        }
+        else if (IsZoomOutKeyPressed)
+        {
+            ZoomOut();
         }
     }
 
