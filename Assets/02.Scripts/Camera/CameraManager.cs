@@ -16,7 +16,6 @@ public class CameraManager : Singleton<CameraManager>
     [SerializeField] private Transform _quarterPositionTransform; // 쿼터뷰 시점 위치를 지정하는 Transform
 
     [Header("카메라 전환 설정")]
-    [SerializeField] private float _transitionSpeed = 5f;
     [SerializeField] private bool _useSmoothing = true;
     [SerializeField] private float _smoothTime = 0.2f;
 
@@ -38,15 +37,20 @@ public class CameraManager : Singleton<CameraManager>
     {
         base.Awake();
 
-        if (_mainCamera == null)
-            _mainCamera = Camera.main;
-
         // 초기 위치 트랜스폼 설정
         _currentPositionTransform = _fpsPositionTransform;
     }
 
     private void Start()
     {
+        // 카메라 참조가 없으면 자동으로 찾기
+        if (_mainCamera == null)
+        {
+            _mainCamera = GetComponent<Camera>();
+            if (_mainCamera == null)
+                _mainCamera = Camera.main;
+        }
+
         // 필요한 참조가 없으면 찾기
         if (_targetPlayer == null)
         {

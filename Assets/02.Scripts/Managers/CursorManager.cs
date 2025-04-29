@@ -10,7 +10,7 @@ public class CursorManager : Singleton<CursorManager>
 
     private bool _isPaused = false;
 
-    private void Awake()
+    protected override void Awake()
     {
         base.Awake();
         // 기본 커서 설정

@@ -127,9 +127,6 @@ public class PlayerRotate : MonoBehaviour
 
             // 현재 회전값 저장 (카메라 동기화를 위해)
             _rotationX = transform.eulerAngles.y;
-
-            // 회전 이벤트 발생 (Y축은 크로스헤어로 회전하지 않음)
-            CameraEvents.RaisePlayerRotationInput(new Vector2(_rotationX, _rotationY));
         }
     }
 

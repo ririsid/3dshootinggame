@@ -8,6 +8,7 @@ public class CameraRotate : MonoBehaviour
     [Header("회전 설정")]
     [SerializeField] private float _smoothTime = 0.1f;
     [SerializeField] private bool _useSmoothing = false;
+    [SerializeField] private CameraShake _cameraShake;
 
     private Vector2 _targetRotation = Vector2.zero;
 
@@ -52,6 +53,10 @@ public class CameraRotate : MonoBehaviour
     /// </summary>
     private void UpdateCameraRotation()
     {
+        // 카메라 흔들림이 진행 중이면 회전 적용하지 않음
+        if (_cameraShake != null && _cameraShake.IsShaking)
+            return;
+
         if (_useSmoothing)
         {
             // 부드러운 회전 적용
