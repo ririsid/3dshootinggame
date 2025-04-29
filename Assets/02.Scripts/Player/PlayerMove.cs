@@ -57,7 +57,7 @@ public class PlayerMove : MonoBehaviour
     private float _wallDescendSpeed; // 벽 내려가기 속도
     private float _wallStrafeSpeed; // 벽 좌우 이동 속도
     private float _minWallNormalY; // 벽으로 인식할 최소 수직 각도 (0.7 = 약 45도)
-    [SerializeField] private LayerMask _wallLayer = 1 << 6; // 벽으로 인식할 레이어, 기본값 6번 레이어(Wall)
+    [SerializeField] private LayerMask _wallLayer = 1 << 7; // 벽으로 인식할 레이어, 기본값 7번 레이어(Wall)
     private float _wallInputThreshold; // 벽 오르기 중 입력 감지 기준값
     private float _wallMaxDistance; // 벽에서 떨어질 거리 기준값
 
