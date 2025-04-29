@@ -4129,6 +4129,65 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5055361240756315598, guid: 720b40141cba56640830e70c22f703d9, type: 3}
   m_PrefabInstance: {fileID: 1720135280}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1778190629
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1778190630}
+  - component: {fileID: 1778190631}
+  m_Layer: 0
+  m_Name: BulletEffectManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1778190630
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778190629}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -1, z: 2.9}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1964264920}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1778190631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1778190629}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed4f4f918ac06f842b8578800a3e0da8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _bulletImpactEffectPrefab: {fileID: 2256102015677452723, guid: fb1141a5364e4ce48aa2af09175c41cf, type: 3}
+  _bulletImpactEffectDuration: 1.5
+  _bulletImpactEffectPoolSize: 10
+  _tracerBulletPrefab: {fileID: 1184239944076256109, guid: 990c087702087b2409882e307b73af2f, type: 3}
+  _tracerBulletDuration: 0.1
+  _tracerBulletPoolSize: 15
+  _tracerBulletWidth: 0.05
+  _tracerBulletMaterial: {fileID: 2100000, guid: 300cd1ae158297146aff0f4869eb42df, type: 2}
+  _tracerBulletColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  _tracerAlphaOverLifetime:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &1791924459 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8152393052096773302, guid: 720b40141cba56640830e70c22f703d9, type: 3}
@@ -4670,6 +4729,7 @@ Transform:
   - {fileID: 1140036844}
   - {fileID: 795432942}
   - {fileID: 881612156}
+  - {fileID: 1778190630}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1964264922
@@ -4742,11 +4802,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _playerStat: {fileID: 1964264924}
   _crosshairComponent: {fileID: 2063180882}
+  _bulletEffectManager: {fileID: 1778190631}
   _firePosition: {fileID: 1140036843}
   _bulletDamage: 10
-  _bulletEffectPrefab: {fileID: 2256102015677452723, guid: fb1141a5364e4ce48aa2af09175c41cf, type: 3}
-  _bulletEffectDuration: 1.5
-  _bulletEffectPoolSize: 10
   _shootableLayerMask:
     serializedVersion: 2
     m_Bits: 3993
