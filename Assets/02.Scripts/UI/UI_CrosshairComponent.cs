@@ -208,24 +208,16 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     {
         _currentCameraMode = mode;
 
-        // 모드에 따라 커서 상태 변경
+        // 위치 초기화 및 설정
         switch (mode)
         {
             case CameraEvents.CameraMode.Quarter:
-                // 쿼터뷰 모드: 커서 표시 및 화면 내 제한
-                Cursor.visible = true;
-                Cursor.lockState = CursorLockMode.Confined;
-
                 // 위치 초기화
                 _currentWorldPosition = GetWorldPositionFromScreenCenter();
                 break;
 
             case CameraEvents.CameraMode.FPS:
             case CameraEvents.CameraMode.TPS:
-                // FPS/TPS 모드: 커서 숨김 및 잠금
-                Cursor.visible = false;
-                Cursor.lockState = CursorLockMode.Locked;
-
                 // 크로스헤어를 화면 중앙으로 재설정
                 ResetCrosshairToCenter();
                 break;

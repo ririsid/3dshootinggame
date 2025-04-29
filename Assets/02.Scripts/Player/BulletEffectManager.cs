@@ -92,7 +92,7 @@ public class BulletEffectManager : MonoBehaviour
         float endTime = startTime + duration;
 
         // 초기 색상 저장
-        Color originalColor = lineRenderer.material.color;
+        Color originalColor = lineRenderer.material.GetColor("_TintColor");
 
         // 시간에 따라 알파값 감소
         while (Time.time < endTime && lineRenderer != null)
@@ -104,7 +104,7 @@ public class BulletEffectManager : MonoBehaviour
 
             Color newColor = originalColor;
             newColor.a = alpha;
-            lineRenderer.material.color = newColor;
+            lineRenderer.material.SetColor("_TintColor", newColor);
 
             yield return null;
         }

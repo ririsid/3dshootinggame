@@ -16,7 +16,7 @@ public class CameraManager : Singleton<CameraManager>
     [SerializeField] private Transform _quarterPositionTransform; // 쿼터뷰 시점 위치를 지정하는 Transform
 
     [Header("카메라 전환 설정")]
-    [SerializeField] private bool _useSmoothing = true;
+    [SerializeField] private bool _useSmoothing = false;
     [SerializeField] private float _smoothTime = 0.2f;
 
     private CameraEvents.CameraMode _currentMode = CameraEvents.CameraMode.FPS;
