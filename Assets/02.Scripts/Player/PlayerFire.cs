@@ -9,13 +9,11 @@ public class PlayerFire : MonoBehaviour
     [Header("참조")]
     [SerializeField] private PlayerStat _playerStat;
     [SerializeField] private UI_CrosshairComponent _crosshairComponent;
+    [SerializeField] private BulletEffectManager _bulletEffectManager;
 
     [Header("발사 설정")]
     [SerializeField] private GameObject _firePosition;
     [SerializeField] private int _bulletDamage = 10;
-    [SerializeField] private ParticleSystem _bulletEffectPrefab;
-    [SerializeField] private float _bulletEffectDuration = 1.5f;
-    [SerializeField] private int _bulletEffectPoolSize = 10;
     [SerializeField] private LayerMask _shootableLayerMask = -1; // 발사 가능한 레이어 마스크
     [SerializeField] private float _maxShootDistance = 1000f; // 최대 사거리
     [SerializeField] private bool _showDebugRays = true; // 디버그 레이 표시 여부
@@ -40,7 +38,6 @@ public class PlayerFire : MonoBehaviour
     private bool _isChargingBomb = false;
     private float _currentBombCharge = 0f;
     private bool _isBombPoolInitialized = false;
-    private bool _isBulletEffectPoolInitialized = false;
 
     // 연사 관련 변수 추가
     private float _nextFireTime = 0f;
@@ -86,7 +83,6 @@ public class PlayerFire : MonoBehaviour
 
         // 오브젝트 풀 초기화
         InitializeBombPool();
-        InitializeBulletEffectPool();
 
         // 총알 초기화
         _playerStat.InitializeAmmo();
@@ -132,21 +128,6 @@ public class PlayerFire : MonoBehaviour
             ObjectPoolManager.Instance.InitializePool(_bombPrefab, _initialPoolSize);
             _isBombPoolInitialized = true;
             Debug.Log($"폭탄 오브젝트 풀 초기화 완료 (크기: {_initialPoolSize})");
-        }
-    }
-
-    /// <summary>
-    /// 총알 이펙트 오브젝트 풀 초기화
-    /// </summary>
-    private void InitializeBulletEffectPool()
-    {
-        if (_bulletEffectPrefab != null && !_isBulletEffectPoolInitialized)
-        {
-            // ParticleSystem을 GameObject로 변환하여 풀 초기화
-            GameObject bulletEffectObj = _bulletEffectPrefab.gameObject;
-            ObjectPoolManager.Instance.InitializePool(bulletEffectObj, _bulletEffectPoolSize);
-            _isBulletEffectPoolInitialized = true;
-            Debug.Log($"총알 이펙트 오브젝트 풀 초기화 완료 (크기: {_bulletEffectPoolSize})");
         }
     }
 
@@ -430,11 +411,20 @@ public class PlayerFire : MonoBehaviour
             }
         }
 
+        // 총알 궤적 이펙트 생성
+        if (_bulletEffectManager != null)
+        {
+            _bulletEffectManager.CreateTracerBulletEffect(_firePosition.transform.position, targetPoint);
+        }
+
         // 공통 처리 로직: 유효한 타격이 있을 때만 효과 생성 및 데미지 처리
         if (validTarget)
         {
             // 피격 이펙트 생성
-            CreateBulletHitEffect(hitInfo.point, hitInfo.normal);
+            if (_bulletEffectManager != null)
+            {
+                _bulletEffectManager.CreateBulletImpactEffect(hitInfo.point, hitInfo.normal);
+            }
 
             // 대미지 처리
             if (hitInfo.collider.TryGetComponent<IDamageable>(out var damageable))
@@ -450,55 +440,6 @@ public class PlayerFire : MonoBehaviour
 
         // 총 발사 이벤트 호출
         OnWeaponFired?.Invoke();
-    }
-
-    /// <summary>
-    /// 총알 피격 이펙트 생성
-    /// </summary>
-    private void CreateBulletHitEffect(Vector3 position, Vector3 normal)
-    {
-        if (_bulletEffectPrefab != null)
-        {
-            // 오브젝트 풀에서 이펙트 가져오기
-            GameObject effectObj = ObjectPoolManager.Instance.GetFromPool(_bulletEffectPrefab.name);
-
-            if (effectObj == null)
-            {
-                // 풀에서 가져오기 실패 시 직접 생성
-                ParticleSystem hitEffect = Instantiate(_bulletEffectPrefab);
-                hitEffect.transform.position = position;
-                hitEffect.transform.forward = normal;
-                hitEffect.Play();
-                return;
-            }
-
-            // 풀에서 가져온 이펙트 설정
-            effectObj.transform.position = position;
-            effectObj.transform.forward = normal;
-            effectObj.SetActive(true);
-
-            // 파티클 시스템 재생
-            if (effectObj.TryGetComponent<ParticleSystem>(out var particleSystem))
-            {
-                particleSystem.Play();
-            }
-
-            // 일정 시간 후 풀로 반환
-            StartCoroutine(ReturnEffectToPool(effectObj, _bulletEffectDuration));
-        }
-    }
-
-    /// <summary>
-    /// 지정된 시간 후 이펙트를 풀에 반환
-    /// </summary>
-    private IEnumerator ReturnEffectToPool(GameObject effect, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-
-        if (effect != null && effect.activeSelf)
-        {
-            ObjectPoolManager.Instance.ReturnToPool(effect);
-        }
     }
 
     /// <summary>
