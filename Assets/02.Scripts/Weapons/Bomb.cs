@@ -95,8 +95,8 @@ public class Bomb : MonoBehaviour
             {
                 Damage damage = new()
                 {
-                    Value = (int)_explosionDamage,
-                    From = gameObject
+                    Amount = (int)_explosionDamage,
+                    Source = gameObject
                 };
                 damageable.TakeDamage(damage);
             }

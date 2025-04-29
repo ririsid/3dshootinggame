@@ -9,7 +9,6 @@ public class EnemyPatrol : MonoBehaviour
     [Header("순찰 설정")]
     [SerializeField] private Transform[] _waypoints;
     [SerializeField] private float _waitTime = 2f;
-    [SerializeField] private float _rotationSpeed = 5f;
     [SerializeField] private float _stoppingDistance = 0.1f;
     #endregion
 

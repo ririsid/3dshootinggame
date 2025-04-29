@@ -45,8 +45,8 @@ public class Barrel : MonoBehaviour, IDamageable
     {
         if (_isExploded) return;
 
-        _currentHealth -= damage.Value;
-        Debug.Log($"배럴이 {damage.From.name}에게 {damage.Value}의 데미지를 받았습니다. 현재 체력: {_currentHealth}");
+        _currentHealth -= damage.Amount;
+        Debug.Log($"배럴이 {damage.Source.name}에게 {damage.Amount}의 데미지를 받았습니다. 현재 체력: {_currentHealth}");
 
         if (_currentHealth <= 0)
         {
@@ -80,8 +80,8 @@ public class Barrel : MonoBehaviour, IDamageable
             {
                 Damage explosionDamage = new()
                 {
-                    Value = _explosionDamage,
-                    From = gameObject
+                    Amount = _explosionDamage,
+                    Source = gameObject
                 };
                 damageable.TakeDamage(explosionDamage);
             }

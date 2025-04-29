@@ -57,7 +57,7 @@ public class PlayerMove : MonoBehaviour
     private float _wallDescendSpeed; // 벽 내려가기 속도
     private float _wallStrafeSpeed; // 벽 좌우 이동 속도
     private float _minWallNormalY; // 벽으로 인식할 최소 수직 각도 (0.7 = 약 45도)
-    [SerializeField] private LayerMask _wallLayer = 1 << 6; // 벽으로 인식할 레이어, 기본값 6번 레이어(Wall)
+    [SerializeField] private LayerMask _wallLayer = 1 << 7; // 벽으로 인식할 레이어, 기본값 7번 레이어(Wall)
     private float _wallInputThreshold; // 벽 오르기 중 입력 감지 기준값
     private float _wallMaxDistance; // 벽에서 떨어질 거리 기준값
 
@@ -78,19 +78,18 @@ public class PlayerMove : MonoBehaviour
     #endregion
 
     #region 내부 참조
-    private PlayerStat _playerStat;
-    private CharacterController _characterController;
-    private PlayerInputHandler _inputHandler;
+    [Header("컴포넌트 참조")]
+    [SerializeField] private PlayerStat _playerStat;
+    [SerializeField] private CharacterController _characterController;
+    [SerializeField] private PlayerInputHandler _inputHandler;
     #endregion
 
-    private void Awake()
+    private void Start()
     {
-        _characterController = GetComponent<CharacterController>();
-        _playerStat = GetComponent<PlayerStat>();
-        _inputHandler = GetComponent<PlayerInputHandler>();
-
-        if (_playerStat == null) Debug.LogError("PlayerStat 컴포넌트를 찾을 수 없습니다!", this);
-        if (_inputHandler == null) Debug.LogError("PlayerInputHandler 컴포넌트를 찾을 수 없습니다!", this);
+        // 참조 유효성 검사
+        if (_playerStat == null) Debug.LogError("PlayerStat 컴포넌트가 할당되지 않았습니다!", this);
+        if (_characterController == null) Debug.LogError("CharacterController 컴포넌트가 할당되지 않았습니다!", this);
+        if (_inputHandler == null) Debug.LogError("PlayerInputHandler 컴포넌트가 할당되지 않았습니다!", this);
 
         InitializeMovementStats();
     }
