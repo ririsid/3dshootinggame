@@ -51,10 +51,8 @@ public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 인스턴스가 있는지 확인 (인스턴스 생성 없이)
-    /// </summary>
-    public static bool HasInstance => _instance != null;
+    // 인스턴스 존재 여부를 확인하는 정적 속성 추가
+    public static bool HasInstance => _instance != null && !_isApplicationQuitting;
 
     protected virtual void Awake()
     {

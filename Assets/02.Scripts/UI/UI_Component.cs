@@ -20,7 +20,18 @@ public abstract class UI_Component : MonoBehaviour
     /// </summary>
     protected virtual void OnDisable()
     {
-        UnregisterEvents();
+        try
+        {
+            // EventManager가 존재하는지 확인하는 로직 추가
+            if (EventManager.HasInstance)
+            {
+                UnregisterEvents();
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"이벤트 해제 중 오류 발생: {e.Message}");
+        }
     }
     #endregion
 
