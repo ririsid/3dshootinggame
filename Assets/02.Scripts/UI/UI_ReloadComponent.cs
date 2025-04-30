@@ -15,6 +15,10 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
     [SerializeField] private TextMeshProUGUI _reloadTimeText;
     [SerializeField] private CanvasGroup _canvasGroup;
 
+    [Header("플레이어 참조")]
+    [SerializeField] private PlayerFire _playerFire;
+    [SerializeField] private PlayerStat _playerStat;
+
     [Header("애니메이션 설정")]
     [SerializeField] private float _fadeInDuration = 0.2f;
     [SerializeField] private float _fadeOutDuration = 0.3f;
@@ -24,7 +28,6 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
     [SerializeField] private Color _normalColor = Color.black;
     [SerializeField] private Color _completeColor = Color.green;
 
-    private PlayerFire _playerFire;
     private float _reloadDuration;
     private bool _isVisible;
     private Coroutine _fadeCoroutine;
@@ -48,7 +51,7 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
 
     private void Start()
     {
-        // PlayerFire 컴포넌트 찾기
+        // PlayerFire 컴포넌트 참조가 없으면 찾기
         if (_playerFire == null)
         {
             _playerFire = FindFirstObjectByType<PlayerFire>();
@@ -59,11 +62,14 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
             }
         }
 
-        // 플레이어 스탯에서 재장전 시간 가져오기
-        if (_playerFire.TryGetComponent<PlayerStat>(out var playerStat))
+        // PlayerStat 참조가 없으면 PlayerFire에서 가져오기
+        if (_playerStat == null && _playerFire != null)
         {
-            _reloadDuration = playerStat.ReloadTime;
+            _playerFire.TryGetComponent(out _playerStat);
         }
+
+        // 재장전 시간 초기화
+        UpdateReloadTime();
     }
     #endregion
 
@@ -95,11 +101,8 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
     /// </summary>
     public void SetPlayerStat(PlayerStat playerStat)
     {
-        // 이 컴포넌트는 PlayerStat을 직접 사용하지 않지만 재장전 시간을 참조
-        if (playerStat != null)
-        {
-            _reloadDuration = playerStat.ReloadTime;
-        }
+        _playerStat = playerStat;
+        UpdateReloadTime();
     }
 
     /// <summary>
@@ -115,18 +118,28 @@ public class UI_ReloadComponent : UI_Component, IUIPlayerComponent
         // 새 이벤트 등록
         RegisterEvents();
 
-        // 재장전 시간 가져오기
-        if (_playerFire != null)
+        // PlayerStat 참조가 없으면 PlayerFire에서 가져오기
+        if (_playerStat == null && _playerFire != null)
         {
-            if (_playerFire.TryGetComponent<PlayerStat>(out var playerStat))
-            {
-                _reloadDuration = playerStat.ReloadTime;
-            }
+            _playerFire.TryGetComponent(out _playerStat);
         }
+
+        UpdateReloadTime();
     }
     #endregion
 
     #region 비공개 메서드
+    /// <summary>
+    /// 재장전 시간 정보 업데이트
+    /// </summary>
+    private void UpdateReloadTime()
+    {
+        if (_playerStat != null)
+        {
+            _reloadDuration = _playerStat.ReloadTime;
+        }
+    }
+
     /// <summary>
     /// 재장전 상태 변경 이벤트 핸들러
     /// </summary>
