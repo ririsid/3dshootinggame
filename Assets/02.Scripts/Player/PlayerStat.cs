@@ -3,21 +3,35 @@ using UnityEngine;
 
 public class PlayerStat : MonoBehaviour
 {
-    // 이벤트 정의: 스태미너 변경 시 발생
+    // 스태미너 관련 이벤트
     public event Action<float, float> OnStaminaChanged; // (현재 스태미너, 최대 스태미너)
-    // 폭탄 관련 이벤트 추가
+
+    // 무기 관련 이벤트
     public event Action<int, int> OnBombCountChanged; // (현재 폭탄 개수, 최대 폭탄 개수)
-    // 총알 관련 이벤트 추가
     public event Action<int, int> OnAmmoChanged; // (현재 총알 개수, 최대 총알 개수)
     public event Action<bool> OnReloadingChanged; // 재장전 중 여부
+
+    // 체력 관련 이벤트
+    public event Action<int, int> OnHealthChanged; // (현재 체력, 최대 체력)
+    public event Action OnPlayerDied; // 플레이어 사망 시 발생
+    public event Action<Damage> OnPlayerHit; // 플레이어 피격 시 발생
 
     [Header("스탯 데이터")]
     [SerializeField] private PlayerStatSO _playerStatData;
 
+    // 스태미너 관련 변수
     private float _stamina;
+
+    // 무기 관련 변수
     private int _currentBombCount;
     private int _currentAmmo;
     private bool _isReloading;
+
+    // 체력 관련 변수
+    private int _currentHealth;
+    private bool _isDead;
+    private bool _isInvincible;
+    private float _lastDamageTime = -999f;
 
     private void Awake()
     {
@@ -34,6 +48,16 @@ public class PlayerStat : MonoBehaviour
         // 초기 폭탄 개수 설정 및 이벤트 발생
         _currentBombCount = _playerStatData.maxBombCount;
         OnBombCountChanged?.Invoke(_currentBombCount, MaxBombCount);
+
+        // 초기 체력 설정 및 이벤트 발생
+        _currentHealth = _playerStatData.maxHealth;
+        OnHealthChanged?.Invoke(_currentHealth, MaxHealth);
+    }
+
+    private void Update()
+    {
+        // 자동 체력 회복 처리
+        HandleHealthRecovery();
     }
 
     public void RecoverStamina()
@@ -173,6 +197,30 @@ public class PlayerStat : MonoBehaviour
         }
     }
 
+    // 체력 관련 프로퍼티
+    public int CurrentHealth
+    {
+        get => _currentHealth;
+        private set
+        {
+            int oldHealth = _currentHealth;
+            _currentHealth = Mathf.Clamp(value, 0, MaxHealth);
+
+            if (oldHealth != _currentHealth)
+            {
+                OnHealthChanged?.Invoke(_currentHealth, MaxHealth);
+            }
+        }
+    }
+
+    public int MaxHealth => _playerStatData.maxHealth;
+
+    public bool IsDead => _isDead;
+
+    public bool IsInvincible => _isInvincible;
+
+    public float InvincibilityDuration => _playerStatData.invincibilityDuration;
+
     // 필요한 경우 데이터 교체용 메서드
     public void SetPlayerStatData(PlayerStatSO newData)
     {
@@ -241,6 +289,90 @@ public class PlayerStat : MonoBehaviour
         if (!IsReloading) return;
 
         IsReloading = false;
+    }
+    #endregion
+
+    #region 체력 관련 메서드
+    /// <summary>
+    /// 데미지를 처리합니다.
+    /// </summary>
+    /// <param name="damage">적용할 피해의 정보</param>
+    public void TakeDamage(Damage damage)
+    {
+        // 사망 상태거나 무적 상태면 데미지를 받지 않음
+        if (IsDead || IsInvincible) return;
+
+        // 피격 시간 기록
+        _lastDamageTime = Time.time;
+
+        // 데미지 적용
+        CurrentHealth -= damage.Amount;
+
+        // 피격 이벤트 발생
+        OnPlayerHit?.Invoke(damage);
+
+        // 체력이 0 이하면 사망 처리
+        if (CurrentHealth <= 0)
+        {
+            Die();
+        }
+    }
+
+    /// <summary>
+    /// 체력을 회복합니다.
+    /// </summary>
+    /// <param name="amount">회복할 체력량</param>
+    public void HealHealth(int amount)
+    {
+        if (IsDead) return;
+        CurrentHealth += amount;
+    }
+
+    /// <summary>
+    /// 플레이어가 사망할 때 호출되는 메서드
+    /// </summary>
+    private void Die()
+    {
+        if (_isDead) return;
+        _isDead = true;
+        OnPlayerDied?.Invoke();
+    }
+
+    /// <summary>
+    /// 자동 체력 회복을 처리합니다
+    /// </summary>
+    private void HandleHealthRecovery()
+    {
+        // 최대 체력이면 회복하지 않음
+        if (_currentHealth >= MaxHealth || IsDead)
+        {
+            // 최대 체력에 도달했을 때 회복 상태 리셋
+            // 이렇게 하면 다음에 피격 시 제대로 타이머가 작동함
+            if (_currentHealth >= MaxHealth)
+            {
+                _lastDamageTime = Time.time;
+            }
+            return;
+        }
+
+        // 마지막 피격 후 일정 시간이 지났을 때만 체력 회복
+        if (Time.time - _lastDamageTime < _playerStatData.healthRecoveryDelay)
+            return;
+
+        _lastDamageTime = Time.time; // 회복 시작 시 타이머 리셋
+
+        // 체력 회복
+        int healAmount = Mathf.CeilToInt(_playerStatData.healthRecoveryRate);
+        CurrentHealth += healAmount;
+    }
+
+    /// <summary>
+    /// 무적 상태를 설정합니다.
+    /// </summary>
+    /// <param name="isInvincible">무적 여부</param>
+    public void SetInvincible(bool isInvincible)
+    {
+        _isInvincible = isInvincible;
     }
     #endregion
 }

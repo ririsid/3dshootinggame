@@ -119,4 +119,17 @@ public class PlayerStatSO : ScriptableObject
 
     [Tooltip("재장전 시간 (초)")]
     public float reloadTime = 2.0f;
+
+    [Header("체력 설정")]
+    [Tooltip("최대 체력")]
+    public int maxHealth = 100;
+
+    [Tooltip("초당 체력 회복량")]
+    public float healthRecoveryRate = 5f;
+
+    [Tooltip("마지막 피격 후 회복 시작까지 대기 시간(초)")]
+    public float healthRecoveryDelay = 5f;
+
+    [Tooltip("피격 후 무적 시간(초)")]
+    public float invincibilityDuration = 1f;
 }
