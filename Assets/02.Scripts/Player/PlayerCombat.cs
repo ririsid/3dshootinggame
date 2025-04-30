@@ -22,25 +22,71 @@ public class PlayerCombat : MonoBehaviour, IDamageable
     [SerializeField] private float _healthRecoveryRate = 5f; // 초당 회복량
     [SerializeField] private float _healthRecoveryDelay = 5f; // 마지막 피격 후 회복 시작까지 대기 시간
 
+    /// <summary>
+    /// 현재 체력
+    /// </summary>
     private int _currentHealth;
+
+    /// <summary>
+    /// 사망 여부
+    /// </summary>
     private bool _isDead = false;
+
+    /// <summary>
+    /// 무적 상태 여부
+    /// </summary>
     private bool _isInvincible = false;
+
+    /// <summary>
+    /// 마지막으로 데미지를 입은 시간
+    /// </summary>
     private float _lastDamageTime = -999f;
+
+    /// <summary>
+    /// 무적 상태 코루틴 참조
+    /// </summary>
     private Coroutine _invincibilityCoroutine;
+
+    /// <summary>
+    /// 피격 깜빡임 효과 코루틴 참조
+    /// </summary>
     private Coroutine _damageFlashCoroutine;
+
+    /// <summary>
+    /// 플레이어 원래 색상
+    /// </summary>
     private Color _originalColor;
 
     // 컴포넌트 참조
+    /// <summary>
+    /// 플레이어 스탯 컴포넌트 참조
+    /// </summary>
     private PlayerStat _playerStat;
+
+    /// <summary>
+    /// 플레이어 이동 컴포넌트 참조
+    /// </summary>
     private PlayerMove _playerMove;
+
+    /// <summary>
+    /// 플레이어 발사 컴포넌트 참조
+    /// </summary>
     private PlayerFire _playerFire;
 
     #region 이벤트
-    // 체력 변경 이벤트
-    public event Action<int, int> OnHealthChanged; // (현재 체력, 최대 체력)
-    // 사망 이벤트
+    /// <summary>
+    /// 체력 변경 시 발생하는 이벤트입니다. (현재 체력, 최대 체력)
+    /// </summary>
+    public event Action<int, int> OnHealthChanged;
+
+    /// <summary>
+    /// 플레이어 사망 시 발생하는 이벤트입니다.
+    /// </summary>
     public event Action OnPlayerDied;
-    // 피격 이벤트
+
+    /// <summary>
+    /// 플레이어 피격 시 발생하는 이벤트입니다. 데미지 정보를 전달합니다.
+    /// </summary>
     public event Action<Damage> OnPlayerHit;
     #endregion
 
@@ -128,6 +174,12 @@ public class PlayerCombat : MonoBehaviour, IDamageable
         // 데미지 적용
         CurrentHealth -= damage.Amount;
 
+        // 개발 빌드에서만 로그 출력
+        if (Debug.isDebugBuild)
+        {
+            Debug.Log($"플레이어 피격! 데미지: {damage.Amount}, 체력: {_currentHealth}/{_maxHealth}, 소스: {damage.Source.name}");
+        }
+
         // 피격 이벤트 발생
         OnPlayerHit?.Invoke(damage);
 
@@ -158,6 +210,12 @@ public class PlayerCombat : MonoBehaviour, IDamageable
         if (_isDead) return;
 
         CurrentHealth += amount;
+
+        // 개발 빌드에서만 로그 출력
+        if (Debug.isDebugBuild)
+        {
+            Debug.Log($"플레이어 체력 회복: +{amount}, 체력: {_currentHealth}/{_maxHealth}");
+        }
     }
     #endregion
 
@@ -177,7 +235,11 @@ public class PlayerCombat : MonoBehaviour, IDamageable
         // 사망 이벤트 발생
         OnPlayerDied?.Invoke();
 
-        Debug.Log("플레이어 사망!");
+        // 개발 빌드에서만 로그 출력
+        if (Debug.isDebugBuild)
+        {
+            Debug.Log("플레이어 사망!");
+        }
 
         // TODO: 사망 처리 추가 (애니메이션, 게임오버 처리 등)
     }

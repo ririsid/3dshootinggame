@@ -407,6 +407,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _maxHealth: 100
   _attackCooldown: 1
+  _attackDamage: 15
+  _attackRadius: 1.2
+  _attackSound: {fileID: 0}
+  _attackEffectPrefab: {fileID: 0}
+  _attackEffectPoint: {fileID: 0}
 --- !u!114 &7612807472078820943
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -17,15 +17,59 @@ public class EnemyCombat : MonoBehaviour
     [SerializeField] private GameObject _attackEffectPrefab;
     [SerializeField] private Transform _attackEffectPoint;
 
+    /// <summary>
+    /// 현재 체력
+    /// </summary>
     private int _currentHealth;
+
+    /// <summary>
+    /// 공격 쿨다운 타이머
+    /// </summary>
     private float _attackCooldownTimer = 0f;
+
+    /// <summary>
+    /// 사망 여부
+    /// </summary>
     private bool _isDead = false;
+
+    /// <summary>
+    /// 공격 중 여부
+    /// </summary>
     private bool _isAttacking = false;
 
+    /// <summary>
+    /// Enemy 컴포넌트 참조
+    /// </summary>
     private Enemy _enemy;
+
+    /// <summary>
+    /// EnemyEffects 컴포넌트 참조
+    /// </summary>
     private EnemyEffects _enemyEffects;
+
+    /// <summary>
+    /// AudioSource 컴포넌트 참조
+    /// </summary>
     private AudioSource _audioSource;
+
+    /// <summary>
+    /// Animator 컴포넌트 참조
+    /// </summary>
     private Animator _animator;
+
+    #region 이벤트
+    /// <summary>
+    /// 체력 변경 시 발생하는 이벤트입니다.
+    /// </summary>
+    /// <param name="currentHealth">현재 체력</param>
+    /// <param name="maxHealth">최대 체력</param>
+    public delegate void HealthChangedHandler(float currentHealth, float maxHealth);
+
+    /// <summary>
+    /// 체력이 변경될 때 발생하는 이벤트
+    /// </summary>
+    public event HealthChangedHandler OnHealthChanged;
+    #endregion
 
     #region Unity 이벤트 함수
     private void Awake()
@@ -83,6 +127,9 @@ public class EnemyCombat : MonoBehaviour
         {
             Debug.Log($"적 피격! 체력: {_currentHealth}/{_maxHealth}");
         }
+
+        // 체력 변경 이벤트 발생
+        OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
 
         // 넉백 효과 적용
         _enemyEffects.ApplyDamageEffect(damage.Source.transform.position);
@@ -181,11 +228,6 @@ public class EnemyCombat : MonoBehaviour
 
                 // 데미지 적용
                 damageable.TakeDamage(damage);
-
-                if (Debug.isDebugBuild)
-                {
-                    Debug.Log($"적이 플레이어에게 {_attackDamage}의 데미지를 입혔습니다!");
-                }
             }
         }
 
@@ -231,5 +273,15 @@ public class EnemyCombat : MonoBehaviour
     /// 현재 공격 중인지 여부
     /// </summary>
     public bool IsAttacking => _isAttacking;
+
+    /// <summary>
+    /// 최대 체력
+    /// </summary>
+    public int MaxHealth => _maxHealth;
+
+    /// <summary>
+    /// 현재 체력
+    /// </summary>
+    public int CurrentHealth => _currentHealth;
     #endregion
 }
