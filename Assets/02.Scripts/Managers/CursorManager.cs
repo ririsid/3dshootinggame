@@ -44,6 +44,7 @@ public class CursorManager : Singleton<CursorManager>
         _currentCameraMode = CameraManager.Instance != null ?
                             CameraManager.Instance.CurrentMode :
                             CameraEvents.CameraMode.FPS;
+        OnCameraModeChanged(_currentCameraMode);
     }
 
     private void Update()
