@@ -5,25 +5,75 @@ using UnityEngine;
 /// </summary>
 public class CameraManager : Singleton<CameraManager>
 {
+    #region 필드
     [Header("카메라 참조")]
+    /// <summary>
+    /// 메인 카메라 참조
+    /// </summary>
     [SerializeField] private Camera _mainCamera;
+
+    /// <summary>
+    /// 미니맵 카메라 참조
+    /// </summary>
     [SerializeField] private Camera _minimapCamera;
 
     [Header("카메라 위치 설정")]
+    /// <summary>
+    /// 카메라가 따라갈 플레이어 트랜스폼
+    /// </summary>
     [SerializeField] private Transform _targetPlayer;
-    [SerializeField] private Transform _fpsPositionTransform; // FPS 시점 위치를 지정하는 Transform
-    [SerializeField] private Transform _tpsPositionTransform; // TPS 시점 위치를 지정하는 Transform
-    [SerializeField] private Transform _quarterPositionTransform; // 쿼터뷰 시점 위치를 지정하는 Transform
+
+    /// <summary>
+    /// 1인칭 시점 위치를 지정하는 Transform
+    /// </summary>
+    [SerializeField] private Transform _fpsPositionTransform;
+
+    /// <summary>
+    /// 3인칭 시점 위치를 지정하는 Transform
+    /// </summary>
+    [SerializeField] private Transform _tpsPositionTransform;
+
+    /// <summary>
+    /// 쿼터뷰 시점 위치를 지정하는 Transform
+    /// </summary>
+    [SerializeField] private Transform _quarterPositionTransform;
 
     [Header("카메라 전환 설정")]
+    /// <summary>
+    /// 카메라 전환 시 부드러운 이동 효과 사용 여부
+    /// </summary>
     [SerializeField] private bool _useSmoothing = false;
+
+    /// <summary>
+    /// 부드러운 이동 시 전환 시간(초)
+    /// </summary>
     [SerializeField] private float _smoothTime = 0.2f;
 
+    /// <summary>
+    /// 현재 카메라 모드
+    /// </summary>
     private CameraEvents.CameraMode _currentMode = CameraEvents.CameraMode.FPS;
+
+    /// <summary>
+    /// 부드러운 이동 계산을 위한 속도 벡터
+    /// </summary>
     private Vector3 _cameraVelocity = Vector3.zero;
+
+    /// <summary>
+    /// 현재 카메라 위치 트랜스폼
+    /// </summary>
     private Transform _currentPositionTransform;
-    private bool _isTransitioning = false; // 카메라 전환 중인지 추적
-    private Vector3 _targetPosition; // 카메라 목표 위치
+
+    /// <summary>
+    /// 카메라 전환 중인지 추적하는 플래그
+    /// </summary>
+    private bool _isTransitioning = false;
+
+    /// <summary>
+    /// 카메라 이동 목표 위치
+    /// </summary>
+    private Vector3 _targetPosition;
+    #endregion
 
     #region 프로퍼티
     /// <summary>
@@ -33,6 +83,9 @@ public class CameraManager : Singleton<CameraManager>
     #endregion
 
     #region Unity 이벤트 함수
+    /// <summary>
+    /// 컴포넌트 초기화를 수행합니다.
+    /// </summary>
     protected override void Awake()
     {
         base.Awake();
@@ -41,6 +94,9 @@ public class CameraManager : Singleton<CameraManager>
         _currentPositionTransform = _fpsPositionTransform;
     }
 
+    /// <summary>
+    /// 시작 시 참조를 확인하고 초기 설정을 수행합니다.
+    /// </summary>
     private void Start()
     {
         // 카메라 참조가 없으면 자동으로 찾기
@@ -51,25 +107,27 @@ public class CameraManager : Singleton<CameraManager>
                 _mainCamera = Camera.main;
         }
 
-        // 필요한 참조가 없으면 찾기
+        // 플레이어 참조가 없으면 자동으로 찾기
         if (_targetPlayer == null)
         {
             GameObject player = GameObject.FindWithTag("Player");
             if (player != null)
                 _targetPlayer = player.transform;
             else
-                Debug.LogError("[CameraManager] 플레이어를 찾을 수 없습니다.");
+                Debug.LogError("플레이어를 찾을 수 없습니다.");
         }
 
         // Transform 참조 확인
         ValidateTransformReferences();
 
-        // 초기 모드 설정
+        // 초기 모드 설정 (전환 효과 없이 즉시 적용)
         SetCameraMode(CameraEvents.CameraMode.FPS);
-        // 초기 설정은 즉시 적용 (전환 효과 없음)
         _isTransitioning = false;
     }
 
+    /// <summary>
+    /// 매 프레임 마지막에 카메라 위치를 업데이트합니다.
+    /// </summary>
     private void LateUpdate()
     {
         // 키 입력 체크
@@ -113,7 +171,12 @@ public class CameraManager : Singleton<CameraManager>
             return;
 
         _currentMode = mode;
-        Debug.Log($"[CameraManager] 카메라 모드 변경: {mode}");
+
+        // 개발 빌드에서만 로그 출력
+        if (Debug.isDebugBuild)
+        {
+            Debug.Log($"카메라 모드 변경: {mode}");
+        }
 
         // 모드에 따른 Transform 설정
         switch (mode)
@@ -145,13 +208,13 @@ public class CameraManager : Singleton<CameraManager>
     private void ValidateTransformReferences()
     {
         if (_fpsPositionTransform == null)
-            Debug.LogWarning("[CameraManager] FPS 위치 Transform이 설정되지 않았습니다. 카메라 변환이 제대로 작동하지 않을 수 있습니다.");
+            Debug.LogWarning("FPS 위치 Transform이 설정되지 않았습니다. 카메라 변환이 제대로 작동하지 않을 수 있습니다.");
 
         if (_tpsPositionTransform == null)
-            Debug.LogWarning("[CameraManager] TPS 위치 Transform이 설정되지 않았습니다. 카메라 변환이 제대로 작동하지 않을 수 있습니다.");
+            Debug.LogWarning("TPS 위치 Transform이 설정되지 않았습니다. 카메라 변환이 제대로 작동하지 않을 수 있습니다.");
 
         if (_quarterPositionTransform == null)
-            Debug.LogWarning("[CameraManager] 쿼터뷰 위치 Transform이 설정되지 않았습니다. 카메라 변환이 제대로 작동하지 않을 수 있습니다.");
+            Debug.LogWarning("쿼터뷰 위치 Transform이 설정되지 않았습니다. 카메라 변환이 제대로 작동하지 않을 수 있습니다.");
     }
 
     /// <summary>

@@ -9,22 +9,59 @@ using TMPro;
 /// </summary>
 public class UI_BloodEffect : UI_Component
 {
+    #region 필드
     [Header("혈흔 효과 설정")]
+    /// <summary>
+    /// 화면에 표시될 혈흔 오버레이 이미지
+    /// </summary>
     [SerializeField] private Image _bloodOverlay;
+
+    /// <summary>
+    /// 혈흔 효과가 나타나는 시간(초)
+    /// </summary>
     [SerializeField] private float _fadeInDuration = 0.1f;
+
+    /// <summary>
+    /// 혈흔 효과가 사라지는 시간(초)
+    /// </summary>
     [SerializeField] private float _fadeOutDuration = 1.0f;
+
+    /// <summary>
+    /// 혈흔 효과의 최대 투명도
+    /// </summary>
     [SerializeField] private float _maxAlpha = 0.8f;
 
     [Header("피해량 텍스트 설정")]
+    /// <summary>
+    /// 피해량 텍스트 표시 여부
+    /// </summary>
     [SerializeField] private bool _showDamageText = true;
+
+    /// <summary>
+    /// 피해량을 표시할 텍스트 컴포넌트
+    /// </summary>
     [SerializeField] private TextMeshProUGUI _damageText;
+
+    /// <summary>
+    /// 피해량 텍스트가 표시되는 시간(초)
+    /// </summary>
     [SerializeField] private float _damageTextDuration = 1.0f;
 
-    // 현재 진행 중인 트윈 애니메이션
+    /// <summary>
+    /// 현재 진행 중인 페이드 트윈 애니메이션
+    /// </summary>
     private Tween _currentFadeTween;
+
+    /// <summary>
+    /// 피해량 텍스트 표시 코루틴
+    /// </summary>
     private Coroutine _damageTextCoroutine;
+    #endregion
 
     #region Unity 이벤트 함수
+    /// <summary>
+    /// 컴포넌트 초기화를 수행합니다.
+    /// </summary>
     private void Awake()
     {
         // 초기화 시 혈흔 이미지 투명도 0으로 설정
@@ -82,6 +119,7 @@ public class UI_BloodEffect : UI_Component
     /// <summary>
     /// 받은 피해량을 화면에 표시하는 코루틴
     /// </summary>
+    /// <param name="damage">화면에 표시할 피해량</param>
     private IEnumerator ShowDamageTextCoroutine(int damage)
     {
         _damageText.gameObject.SetActive(true);
@@ -102,6 +140,9 @@ public class UI_BloodEffect : UI_Component
     #endregion
 
     #region 이벤트 처리
+    /// <summary>
+    /// 이벤트 구독을 등록합니다.
+    /// </summary>
     protected override void RegisterEvents()
     {
         if (EventManager.HasInstance)
@@ -110,6 +151,9 @@ public class UI_BloodEffect : UI_Component
         }
     }
 
+    /// <summary>
+    /// 이벤트 구독을 해제합니다.
+    /// </summary>
     protected override void UnregisterEvents()
     {
         if (EventManager.HasInstance)
@@ -118,6 +162,10 @@ public class UI_BloodEffect : UI_Component
         }
     }
 
+    /// <summary>
+    /// 플레이어 피격 이벤트를 처리합니다.
+    /// </summary>
+    /// <param name="damage">플레이어가 받은 피해 정보</param>
     private void HandlePlayerDamaged(Damage damage)
     {
         ShowBloodEffect(damage.Amount);

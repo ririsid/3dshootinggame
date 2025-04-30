@@ -1,29 +1,39 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// 폭발이 가능한 배럴 오브젝트를 구현합니다.
+/// </summary>
+/// <remarks>
+/// 데미지를 받으면 체력이 감소하고, 체력이 0이 되면 폭발하여 주변에 피해를 입힙니다.
+/// 물리 효과를 적용하고 시각적 이펙트도 표시합니다.
+/// </remarks>
 public class Barrel : MonoBehaviour, IDamageable
 {
+    #region 필드
     [Header("스탯 설정")]
-    [SerializeField] private int _maxHealth = 50;
-    [SerializeField] private int _currentHealth;
+    [SerializeField] private int _maxHealth = 50; // 최대 체력
+    [SerializeField] private int _currentHealth; // 현재 체력
 
     [Header("폭발 설정")]
-    [SerializeField] private float _explosionRadius = 5f;
-    [SerializeField] private int _explosionDamage = 30;
-    [SerializeField] private float _explosionForce = 1000f;
-    [SerializeField] private float _upwardModifier = 0.5f;
-    [SerializeField] private LayerMask _damageableLayerMask;
-    [SerializeField] private float _destroyDelay = 2f;
+    [SerializeField] private float _explosionRadius = 5f; // 폭발 반경
+    [SerializeField] private int _explosionDamage = 30; // 폭발 데미지
+    [SerializeField] private float _explosionForce = 1000f; // 폭발 물리력
+    [SerializeField] private float _upwardModifier = 0.5f; // 위쪽 방향 물리력 수정자
+    [SerializeField] private LayerMask _damageableLayerMask; // 데미지를 입힐 레이어
+    [SerializeField] private float _destroyDelay = 2f; // 파괴까지 지연 시간
 
     [Header("이펙트")]
-    [SerializeField] private GameObject _explosionEffectPrefab;
+    [SerializeField] private GameObject _explosionEffectPrefab; // 폭발 이펙트 프리팹
 
     [Header("충돌 레이어 설정")]
     [Tooltip("폭발 후 배럴이 충돌을 무시할 레이어 마스크")]
-    [SerializeField] private LayerMask _ignoreCollisionLayerMask;
+    [SerializeField] private LayerMask _ignoreCollisionLayerMask; // 충돌 무시 레이어
 
-    private bool _isExploded = false;
-    private Rigidbody _rigidbody;
+    // 내부 상태 필드
+    private bool _isExploded = false; // 폭발 여부
+    private Rigidbody _rigidbody; // 물리 컴포넌트
+    #endregion
 
     #region Unity 이벤트 함수
     private void Awake()
@@ -35,8 +45,18 @@ public class Barrel : MonoBehaviour, IDamageable
     {
         _currentHealth = _maxHealth;
     }
+
+    /// <summary>
+    /// 디버그 모드에서 폭발 범위를 시각화합니다.
+    /// </summary>
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, _explosionRadius);
+    }
     #endregion
 
+    #region 공개 메서드
     /// <summary>
     /// 데미지를 받아 체력을 감소시키고, 체력이 0 이하가 되면 폭발합니다.
     /// </summary>
@@ -46,14 +66,15 @@ public class Barrel : MonoBehaviour, IDamageable
         if (_isExploded) return;
 
         _currentHealth -= damage.Amount;
-        Debug.Log($"배럴이 {damage.Source.name}에게 {damage.Amount}의 데미지를 받았습니다. 현재 체력: {_currentHealth}");
 
         if (_currentHealth <= 0)
         {
             Explode();
         }
     }
+    #endregion
 
+    #region 비공개 메서드
     /// <summary>
     /// 배럴이 폭발하여 주변에 피해를 주고 물리 효과를 적용합니다.
     /// </summary>
@@ -156,13 +177,5 @@ public class Barrel : MonoBehaviour, IDamageable
         yield return new WaitForSeconds(_destroyDelay);
         Destroy(gameObject);
     }
-
-    /// <summary>
-    /// 디버그 모드에서 폭발 범위를 시각화합니다.
-    /// </summary>
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, _explosionRadius);
-    }
+    #endregion
 }

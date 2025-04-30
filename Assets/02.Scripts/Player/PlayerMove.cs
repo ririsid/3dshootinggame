@@ -1,6 +1,9 @@
 using System;
 using UnityEngine;
 
+/// <summary>
+/// 플레이어 이동 상태를 정의하는 열거형입니다.
+/// </summary>
 public enum PlayerMovementState
 {
     Idle,       // 가만히 서 있는 상태
@@ -12,11 +15,21 @@ public enum PlayerMovementState
     WallClimbing // 벽 오르기 중인 상태
 }
 
-
+/// <summary>
+/// 플레이어 이동 및 물리 동작을 처리하는 클래스입니다.
+/// </summary>
 public class PlayerMove : MonoBehaviour
 {
+    #region 필드
+    [Header("컴포넌트 참조")]
+    [SerializeField] private PlayerStat _playerStat;
+    [SerializeField] private CharacterController _characterController;
+    [SerializeField] private PlayerInputHandler _inputHandler;
+
+    [Header("벽 오르기 설정")]
+    [SerializeField] private LayerMask _wallLayer = 1 << 7; // 벽으로 인식할 레이어, 기본값 7번 레이어(Wall)
+
     #region 이동 관련 변수
-    [Header("이동 설정")]
     private float _walkSpeed; // 걷기 속도
     private float _runSpeed; // 달리기 속도
     private float _moveInputThreshold; // 이동 감지 임계값
@@ -26,7 +39,6 @@ public class PlayerMove : MonoBehaviour
     #endregion
 
     #region 점프 관련 변수
-    [Header("점프 설정")]
     private float _jumpPower; // 점프 파워
     private int _maxJumpCount; // 최대 점프 횟수 (2 = 2단 점프)
 
@@ -36,7 +48,6 @@ public class PlayerMove : MonoBehaviour
     #endregion
 
     #region 구르기 관련 변수
-    [Header("구르기 설정")]
     private float _rollSpeed; // 구르기 속도
     private float _rollDuration; // 구르기 지속 시간
     private float _rollCooldown; // 구르기 쿨다운 시간
@@ -52,12 +63,10 @@ public class PlayerMove : MonoBehaviour
     #endregion
 
     #region 벽 오르기 관련 변수
-    [Header("벽 오르기 설정")]
     private float _wallClimbSpeed; // 벽 오르기 속도
     private float _wallDescendSpeed; // 벽 내려가기 속도
     private float _wallStrafeSpeed; // 벽 좌우 이동 속도
     private float _minWallNormalY; // 벽으로 인식할 최소 수직 각도 (0.7 = 약 45도)
-    [SerializeField] private LayerMask _wallLayer = 1 << 7; // 벽으로 인식할 레이어, 기본값 7번 레이어(Wall)
     private float _wallInputThreshold; // 벽 오르기 중 입력 감지 기준값
     private float _wallMaxDistance; // 벽에서 떨어질 거리 기준값
 
@@ -68,28 +77,53 @@ public class PlayerMove : MonoBehaviour
     private PlayerMovementState _currentState = PlayerMovementState.Idle;
     private bool _isRollComplete = false; // 구르기 완료 플래그
     #endregion
+    #endregion
 
     #region 공용 프로퍼티
+    /// <summary>
+    /// 걷기 속도를 반환합니다.
+    /// </summary>
     public float WalkSpeed => _walkSpeed;
+
+    /// <summary>
+    /// 달리기 속도를 반환합니다.
+    /// </summary>
     public float RunSpeed => _runSpeed;
+
+    /// <summary>
+    /// 현재 이동 속도를 반환합니다.
+    /// </summary>
     public float CurrentMoveSpeed => _currentMoveSpeed;
+
+    /// <summary>
+    /// 점프 파워를 반환합니다.
+    /// </summary>
     public float JumpPower => _jumpPower;
+
+    /// <summary>
+    /// 최대 점프 횟수를 반환합니다.
+    /// </summary>
     public int MaxJumpCount => _maxJumpCount;
     #endregion
 
-    #region 내부 참조
-    [Header("컴포넌트 참조")]
-    [SerializeField] private PlayerStat _playerStat;
-    [SerializeField] private CharacterController _characterController;
-    [SerializeField] private PlayerInputHandler _inputHandler;
-    #endregion
-
+    #region Unity 이벤트 함수
     private void Start()
     {
         // 참조 유효성 검사
-        if (_playerStat == null) Debug.LogError("PlayerStat 컴포넌트가 할당되지 않았습니다!", this);
-        if (_characterController == null) Debug.LogError("CharacterController 컴포넌트가 할당되지 않았습니다!", this);
-        if (_inputHandler == null) Debug.LogError("PlayerInputHandler 컴포넌트가 할당되지 않았습니다!", this);
+        if (_playerStat == null)
+        {
+            Debug.LogError("PlayerStat 컴포넌트가 할당되지 않았습니다!", this);
+        }
+
+        if (_characterController == null)
+        {
+            Debug.LogError("CharacterController 컴포넌트가 할당되지 않았습니다!", this);
+        }
+
+        if (_inputHandler == null)
+        {
+            Debug.LogError("PlayerInputHandler 컴포넌트가 할당되지 않았습니다!", this);
+        }
 
         InitializeMovementStats();
     }
@@ -101,16 +135,54 @@ public class PlayerMove : MonoBehaviour
         ApplyPhysicsAndMove();
     }
 
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        bool isWallLayer = ((1 << hit.collider.gameObject.layer) & _wallLayer) != 0;
+        if (!isWallLayer) return;
+
+        bool canAttemptWallClimb = (_currentState == PlayerMovementState.Idle ||
+                                   _currentState == PlayerMovementState.Walking ||
+                                   _currentState == PlayerMovementState.Running) &&
+                                   _currentState != PlayerMovementState.Rolling; // 구르기 중에는 벽 오르기 시도 불가
+
+        if (!canAttemptWallClimb) return;
+
+        float wallNormalY = Mathf.Abs(hit.normal.y);
+        bool isSteepEnough = wallNormalY < _minWallNormalY;
+        if (!isSteepEnough) return;
+
+        float dotProduct = Vector3.Dot(transform.forward, -hit.normal);
+        bool isFacingWall = dotProduct > 0.5f;
+        bool hasEnoughStamina = _playerStat.Stamina > 0;
+        bool isPressingUp = _inputHandler.VerticalInput > _wallInputThreshold;
+
+        if (isFacingWall && hasEnoughStamina && isPressingUp)
+        {
+            _currentWall = hit.collider; // 벽 정보 저장
+        }
+    }
+    #endregion
+
+    #region 이동 처리 메서드
+    /// <summary>
+    /// 입력을 처리하고 이동 방향을 계산합니다.
+    /// </summary>
     private void HandleInput()
     {
         CalculateMoveDirection();
     }
 
+    /// <summary>
+    /// 입력을 기반으로 이동 방향을 계산합니다.
+    /// </summary>
     private void CalculateMoveDirection()
     {
         _moveDirection = _inputHandler.MoveDirection;
     }
 
+    /// <summary>
+    /// 현재 상태에 따라 이동 상태를 업데이트합니다.
+    /// </summary>
     private void UpdateMovementState()
     {
         if (HandleWallClimbingStateTransition()) return;
@@ -128,6 +200,10 @@ public class PlayerMove : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 이동 상태를 설정하고 관련 동작을 처리합니다.
+    /// </summary>
+    /// <param name="newState">새로운 이동 상태</param>
     private void SetState(PlayerMovementState newState)
     {
         if (_currentState == newState) return;
@@ -180,7 +256,13 @@ public class PlayerMove : MonoBehaviour
                 break;
         }
     }
+    #endregion
 
+    #region 벽 오르기 관련 메서드
+    /// <summary>
+    /// 벽 오르기 상태 전환을 처리합니다.
+    /// </summary>
+    /// <returns>상태 전환이 발생했는지 여부</returns>
     private bool HandleWallClimbingStateTransition()
     {
         // 아직 벽 오르기 상태가 아니고, 땅에 있으며, 최근에 유효한 벽(_currentWall)과 충돌했고, 필요한 입력/스태미너 조건 만족 시
@@ -219,6 +301,10 @@ public class PlayerMove : MonoBehaviour
         return false; // 벽 오르기 관련 상태 변경 없음
     }
 
+    /// <summary>
+    /// 벽 오르기 상태를 계속 유지할지 또는 벽에서 점프할지 확인합니다.
+    /// </summary>
+    /// <returns>벽 오르기를 계속할지 여부</returns>
     private bool CheckWallClimbContinuationAndJump()
     {
         if (_playerStat.Stamina <= 0) return false;
@@ -239,7 +325,13 @@ public class PlayerMove : MonoBehaviour
         }
         return true; // 벽 오르기 계속
     }
+    #endregion
 
+    #region 구르기 관련 메서드
+    /// <summary>
+    /// 구르기 상태 전환을 처리합니다.
+    /// </summary>
+    /// <returns>상태 전환이 발생했는지 여부</returns>
     private bool HandleRollingStateTransition()
     {
         float timeSinceLastRoll = Time.time - _lastRollTime;
@@ -264,6 +356,9 @@ public class PlayerMove : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// 구르기 방향과 회전축을 계산합니다.
+    /// </summary>
     private void CalculateRollDirectionAndAxis()
     {
         Vector3 inputDir = _moveDirection.normalized;
@@ -285,6 +380,9 @@ public class PlayerMove : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 구르기 상태를 업데이트합니다.
+    /// </summary>
     private void UpdateRolling()
     {
         _rollTimer += Time.deltaTime;
@@ -308,7 +406,13 @@ public class PlayerMove : MonoBehaviour
             // _rollComplete는 false인 상태로 점프로 넘어감
         }
     }
+    #endregion
 
+    #region 공중 상태 관련 메서드
+    /// <summary>
+    /// 점프와 낙하 상태 전환을 처리합니다.
+    /// </summary>
+    /// <returns>상태 전환이 발생했는지 여부</returns>
     private bool HandleAirborneStateTransition()
     {
         if (_inputHandler.IsJumpPressed && _currentState != PlayerMovementState.Rolling &&
@@ -334,7 +438,13 @@ public class PlayerMove : MonoBehaviour
         }
         return false;
     }
+    #endregion
 
+    #region 지상 이동 관련 메서드
+    /// <summary>
+    /// 달리기 상태 전환을 처리합니다.
+    /// </summary>
+    /// <returns>상태 전환이 발생했는지 여부</returns>
     private bool HandleRunningStateTransition()
     {
         if (_inputHandler.IsRunPressed && _playerStat.Stamina > 0 && _characterController.isGrounded &&
@@ -355,6 +465,10 @@ public class PlayerMove : MonoBehaviour
         return _currentState == PlayerMovementState.Running;
     }
 
+    /// <summary>
+    /// 걷기 상태 전환을 처리합니다.
+    /// </summary>
+    /// <returns>상태 전환이 발생했는지 여부</returns>
     private bool HandleWalkingStateTransition()
     {
         if (_moveDirection.sqrMagnitude > _moveInputThreshold * _moveInputThreshold && _characterController.isGrounded &&
@@ -367,7 +481,12 @@ public class PlayerMove : MonoBehaviour
         }
         return _currentState == PlayerMovementState.Walking;
     }
+    #endregion
 
+    #region 물리 및 이동 적용 메서드
+    /// <summary>
+    /// 중력과 이동을 적용합니다.
+    /// </summary>
     private void ApplyPhysicsAndMove()
     {
         ApplyGravity();
@@ -380,6 +499,9 @@ public class PlayerMove : MonoBehaviour
         CalculateAndApplyMovement();
     }
 
+    /// <summary>
+    /// 중력을 적용합니다.
+    /// </summary>
     private void ApplyGravity()
     {
         if (_currentState == PlayerMovementState.WallClimbing)
@@ -401,6 +523,9 @@ public class PlayerMove : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 현재 상태에 따라 이동을 계산하고 적용합니다.
+    /// </summary>
     private void CalculateAndApplyMovement()
     {
         Vector3 finalMovement = Vector3.zero;
@@ -435,24 +560,44 @@ public class PlayerMove : MonoBehaviour
         _characterController.Move(finalMovement * currentSpeed * Time.deltaTime);
     }
 
+    /// <summary>
+    /// 지상 이동을 계산합니다.
+    /// </summary>
+    /// <param name="speed">적용할 이동 속도</param>
+    /// <returns>이동 벡터</returns>
     private Vector3 CalculateGroundMovement(out float speed)
     {
         speed = _currentMoveSpeed;
         return _moveDirection;
     }
 
+    /// <summary>
+    /// 공중 이동을 계산합니다.
+    /// </summary>
+    /// <param name="speed">적용할 이동 속도</param>
+    /// <returns>이동 벡터</returns>
     private Vector3 CalculateAirborneMovement(out float speed)
     {
         speed = _currentMoveSpeed;
         return _moveDirection;
     }
 
+    /// <summary>
+    /// 구르기 이동을 계산합니다.
+    /// </summary>
+    /// <param name="speed">적용할 이동 속도</param>
+    /// <returns>이동 벡터</returns>
     private Vector3 CalculateRollMovement(out float speed)
     {
         speed = _rollSpeed;
         return _rollDirection;
     }
 
+    /// <summary>
+    /// 벽 오르기 이동을 계산합니다.
+    /// </summary>
+    /// <param name="speed">적용할 이동 속도</param>
+    /// <returns>이동 벡터</returns>
     private Vector3 CalculateWallClimbMovement(out float speed)
     {
         Vector3 wallMovement = _inputHandler.GetWallClimbDirection(transform.right);
@@ -487,36 +632,12 @@ public class PlayerMove : MonoBehaviour
         }
         return wallMovement;
     }
-
-    #region Unity 이벤트 함수
-    private void OnControllerColliderHit(ControllerColliderHit hit)
-    {
-        bool isWallLayer = ((1 << hit.collider.gameObject.layer) & _wallLayer) != 0;
-        if (!isWallLayer) return;
-
-        bool canAttemptWallClimb = (_currentState == PlayerMovementState.Idle ||
-                                   _currentState == PlayerMovementState.Walking ||
-                                   _currentState == PlayerMovementState.Running) &&
-                                   _currentState != PlayerMovementState.Rolling; // 구르기 중에는 벽 오르기 시도 불가
-
-        if (!canAttemptWallClimb) return;
-
-        float wallNormalY = Mathf.Abs(hit.normal.y);
-        bool isSteepEnough = wallNormalY < _minWallNormalY;
-        if (!isSteepEnough) return;
-
-        float dotProduct = Vector3.Dot(transform.forward, -hit.normal);
-        bool isFacingWall = dotProduct > 0.5f;
-        bool hasEnoughStamina = _playerStat.Stamina > 0;
-        bool isPressingUp = _inputHandler.VerticalInput > _wallInputThreshold;
-
-        if (isFacingWall && hasEnoughStamina && isPressingUp)
-        {
-            _currentWall = hit.collider; // 벽 정보 저장
-        }
-    }
     #endregion
 
+    #region 초기화 메서드
+    /// <summary>
+    /// 이동 관련 스탯을 초기화합니다.
+    /// </summary>
     private void InitializeMovementStats()
     {
         _walkSpeed = _playerStat.WalkSpeed;
@@ -543,4 +664,5 @@ public class PlayerMove : MonoBehaviour
         _currentMoveSpeed = _walkSpeed;
         SetState(PlayerMovementState.Idle); // 초기 상태 설정
     }
+    #endregion
 }

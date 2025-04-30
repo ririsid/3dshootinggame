@@ -6,15 +6,42 @@ using System.Collections;
 /// </summary>
 public class EnemyCombat : MonoBehaviour
 {
+    #region 필드
     [Header("전투 설정")]
+    /// <summary>
+    /// 적의 최대 체력
+    /// </summary>
     [SerializeField] private int _maxHealth = 100;
+
+    /// <summary>
+    /// 공격 쿨다운 시간(초)
+    /// </summary>
     [SerializeField] private float _attackCooldown = 1f;
+
+    /// <summary>
+    /// 공격 데미지
+    /// </summary>
     [SerializeField] private int _attackDamage = 15;
+
+    /// <summary>
+    /// 공격 범위
+    /// </summary>
     [SerializeField] private float _attackRadius = 1.2f;
 
     [Header("공격 효과")]
+    /// <summary>
+    /// 공격 사운드
+    /// </summary>
     [SerializeField] private AudioClip _attackSound;
+
+    /// <summary>
+    /// 공격 이펙트 프리팹
+    /// </summary>
     [SerializeField] private GameObject _attackEffectPrefab;
+
+    /// <summary>
+    /// 공격 이펙트 생성 위치
+    /// </summary>
     [SerializeField] private Transform _attackEffectPoint;
 
     /// <summary>
@@ -56,6 +83,7 @@ public class EnemyCombat : MonoBehaviour
     /// Animator 컴포넌트 참조
     /// </summary>
     private Animator _animator;
+    #endregion
 
     #region 이벤트
     /// <summary>
@@ -72,6 +100,9 @@ public class EnemyCombat : MonoBehaviour
     #endregion
 
     #region Unity 이벤트 함수
+    /// <summary>
+    /// 컴포넌트 초기화를 수행합니다.
+    /// </summary>
     private void Awake()
     {
         _enemy = GetComponent<Enemy>();
@@ -97,6 +128,9 @@ public class EnemyCombat : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 매 프레임 공격 쿨다운과 상태를 업데이트합니다.
+    /// </summary>
     private void Update()
     {
         if (_enemy.GetComponent<EnemyStateMachine>().CurrentStateType == EnemyState.Attack)
@@ -116,8 +150,10 @@ public class EnemyCombat : MonoBehaviour
     /// <summary>
     /// 데미지를 처리합니다.
     /// </summary>
+    /// <param name="damage">적용할 데미지 정보</param>
     public void TakeDamage(Damage damage)
     {
+        // 이미 죽었거나 피격 중인 경우 무시
         if (_isDead || _enemyEffects.IsDamaged) return;
 
         _currentHealth -= damage.Amount;
@@ -134,6 +170,7 @@ public class EnemyCombat : MonoBehaviour
         // 넉백 효과 적용
         _enemyEffects.ApplyDamageEffect(damage.Source.transform.position);
 
+        // 체력이 0 이하면 사망 처리
         if (_currentHealth <= 0)
         {
             _currentHealth = 0;
@@ -181,6 +218,8 @@ public class EnemyCombat : MonoBehaviour
     /// <summary>
     /// 실제 공격을 수행하는 코루틴
     /// </summary>
+    /// <param name="target">공격 대상 게임 오브젝트</param>
+    /// <returns>코루틴 열거자</returns>
     private IEnumerator PerformAttack(GameObject target)
     {
         _isAttacking = true;

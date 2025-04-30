@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 /// </summary>
 public class CursorManager : Singleton<CursorManager>
 {
+    #region 필드
     [Header("커서 설정")]
     [SerializeField] private Texture2D _defaultCursor;
     [SerializeField] private Texture2D _aimCursor;
@@ -20,7 +21,9 @@ public class CursorManager : Singleton<CursorManager>
     private bool _wasOverUI = false;
     private float _lastUIInteractionTime = 0f;
     private CameraEvents.CameraMode _currentCameraMode;
+    #endregion
 
+    #region Unity 이벤트 함수
     protected override void Awake()
     {
         base.Awake();
@@ -60,7 +63,9 @@ public class CursorManager : Singleton<CursorManager>
         // 이벤트 구독 해제
         CameraEvents.OnCameraModeChanged -= OnCameraModeChanged;
     }
+    #endregion
 
+    #region 비공개 메서드
     /// <summary>
     /// UI 요소와의 상호작용을 확인하고 커서 상태를 업데이트합니다.
     /// </summary>
@@ -139,7 +144,9 @@ public class CursorManager : Singleton<CursorManager>
                 break;
         }
     }
+    #endregion
 
+    #region 공개 메서드
     /// <summary>
     /// 쿼터뷰 모드의 커서 상태를 설정합니다.
     /// </summary>
@@ -211,4 +218,5 @@ public class CursorManager : Singleton<CursorManager>
             RestoreCursorState();
         }
     }
+    #endregion
 }

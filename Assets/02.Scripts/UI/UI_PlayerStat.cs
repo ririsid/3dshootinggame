@@ -23,19 +23,34 @@ public interface IUIPlayerComponent
 public class UI_PlayerStat : UI_Component
 {
     [Header("참조")]
+    /// <summary>
+    /// 플레이어 스탯 컴포넌트 참조
+    /// </summary>
     [SerializeField] private PlayerStat _playerStat;
+    
+    /// <summary>
+    /// 플레이어 발사 컴포넌트 참조
+    /// </summary>
     [SerializeField] private PlayerFire _playerFire;
 
-    // 모든 UI 컴포넌트를 관리할 리스트
+    /// <summary>
+    /// 모든 UI 컴포넌트를 관리할 리스트
+    /// </summary>
     private List<IUIPlayerComponent> _uiComponents = new List<IUIPlayerComponent>();
 
     #region Unity 이벤트 함수
+    /// <summary>
+    /// 초기화 작업을 수행합니다.
+    /// </summary>
     private void Awake()
     {
         // UI 컴포넌트 자동 수집
         CollectUIComponents();
     }
 
+    /// <summary>
+    /// 시작 시 컴포넌트 초기화
+    /// </summary>
     private void Start()
     {
         InitializeComponents();
@@ -58,7 +73,11 @@ public class UI_PlayerStat : UI_Component
             }
         }
 
-        Debug.Log($"[UI_PlayerStat] {_uiComponents.Count}개의 UI 컴포넌트가 수집되었습니다.");
+        // 개발 빌드에서만 로그 출력
+        if (Debug.isDebugBuild)
+        {
+            Debug.Log($"UI 컴포넌트가 {_uiComponents.Count}개 수집되었습니다.");
+        }
     }
 
     /// <summary>
@@ -83,12 +102,18 @@ public class UI_PlayerStat : UI_Component
     #endregion
 
     #region 이벤트 콜백
+    /// <summary>
+    /// 이벤트를 등록합니다.
+    /// </summary>
     protected override void RegisterEvents()
     {
         // 이 클래스에서는 직접적인 이벤트 등록이 필요 없음
         // 각 컴포넌트가 자체적으로 이벤트를 처리함
     }
 
+    /// <summary>
+    /// 이벤트를 해제합니다.
+    /// </summary>
     protected override void UnregisterEvents()
     {
         // 이 클래스에서는 직접적인 이벤트 해제가 필요 없음
@@ -100,6 +125,7 @@ public class UI_PlayerStat : UI_Component
     /// <summary>
     /// PlayerStat 참조 설정 및 하위 컴포넌트에 전달
     /// </summary>
+    /// <param name="playerStat">설정할 플레이어 스탯 컴포넌트</param>
     public void SetupPlayerStat(PlayerStat playerStat)
     {
         _playerStat = playerStat;
@@ -114,6 +140,7 @@ public class UI_PlayerStat : UI_Component
     /// <summary>
     /// PlayerFire 참조 설정 및 하위 컴포넌트에 전달
     /// </summary>
+    /// <param name="playerFire">설정할 플레이어 발사 컴포넌트</param>
     public void SetupPlayerFire(PlayerFire playerFire)
     {
         _playerFire = playerFire;

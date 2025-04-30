@@ -5,12 +5,23 @@ using UnityEngine;
 /// </summary>
 public class ChaseBehaviorStrategy : IEnemyBehaviorStrategy
 {
+    #region 필드
+    /// <summary>
+    /// 마지막으로 알려진 플레이어 위치
+    /// </summary>
     private Vector3 _lastKnownPlayerPosition;
-    private float _scanTimer = 0f;
 
+    /// <summary>
+    /// 주변 스캔 타이머
+    /// </summary>
+    private float _scanTimer = 0f;
+    #endregion
+
+    #region IEnemyBehaviorStrategy 구현
     /// <summary>
     /// 초기 상태를 반환합니다.
     /// </summary>
+    /// <returns>초기 상태</returns>
     public EnemyState GetInitialState()
     {
         return EnemyState.Idle; // 초기 상태는 대기
@@ -19,34 +30,40 @@ public class ChaseBehaviorStrategy : IEnemyBehaviorStrategy
     /// <summary>
     /// Idle 상태에서의 동작을 처리합니다.
     /// </summary>
+    /// <param name="enemy">적 객체</param>
     public void OnIdle(Enemy enemy)
     {
-        _scanTimer += Time.deltaTime;
-
-        // 주기적으로 플레이어 감지 시도
-        if (_scanTimer >= enemy.LookAroundInterval && enemy.Player != null)
+        // 플레이어 존재 여부 확인
+        if (enemy.Player != null)
         {
-            _scanTimer = 0f;
+            _scanTimer += Time.deltaTime;
 
-            float distanceToPlayer = enemy.GetDistanceToDestination(enemy.Player.transform.position);
-
-            // 거리에 상관없이 플레이어가 시야 내에 있으면 추적
-            if (enemy.IsTargetInSight(enemy.Player.transform.position, enemy.ViewAngle, float.MaxValue))
+            // 주기적으로 플레이어 방향 확인
+            if (_scanTimer >= 0.5f)
             {
-                _lastKnownPlayerPosition = enemy.Player.transform.position;
-                enemy.SetState(EnemyState.Trace);
-                return;
-            }
+                _scanTimer = 0f;
 
-            // 거리가 일정 범위 내에 있으면 플레이어 감지 확률 증가
-            if (distanceToPlayer < enemy.FindDistance)
-            {
-                float detectionChance = 1 - (distanceToPlayer / enemy.FindDistance);
-                if (Random.value < detectionChance)
+                // 플레이어가 시야 내에 있는지 확인
+                float distanceToPlayer = enemy.GetDistanceToDestination(enemy.Player.transform.position, false);
+
+                // 시야 체크
+                if (enemy.IsTargetInSight(enemy.Player.transform.position, enemy.ViewAngle, enemy.FindDistance))
                 {
                     _lastKnownPlayerPosition = enemy.Player.transform.position;
                     enemy.SetState(EnemyState.Trace);
                     return;
+                }
+
+                // 거리가 일정 범위 내에 있으면 플레이어 감지 확률 증가
+                if (distanceToPlayer < enemy.FindDistance)
+                {
+                    float detectionChance = 1 - (distanceToPlayer / enemy.FindDistance);
+                    if (Random.value < detectionChance)
+                    {
+                        _lastKnownPlayerPosition = enemy.Player.transform.position;
+                        enemy.SetState(EnemyState.Trace);
+                        return;
+                    }
                 }
             }
         }
@@ -61,6 +78,10 @@ public class ChaseBehaviorStrategy : IEnemyBehaviorStrategy
     /// <summary>
     /// 적이 플레이어를 감지했을 때의 처리를 정의합니다.
     /// </summary>
+    /// <param name="enemy">적 객체</param>
+    /// <param name="playerPosition">플레이어 위치</param>
+    /// <param name="distanceToPlayer">플레이어까지의 거리</param>
+    /// <returns>감지 후 전환할 상태</returns>
     public EnemyState OnPlayerDetected(Enemy enemy, Vector3 playerPosition, float distanceToPlayer)
     {
         // 시야 체크만으로 플레이어 감지 (거리 제한 X)
@@ -83,6 +104,8 @@ public class ChaseBehaviorStrategy : IEnemyBehaviorStrategy
     /// <summary>
     /// 플레이어를 놓쳤을 때의 처리를 정의합니다.
     /// </summary>
+    /// <param name="enemy">적 객체</param>
+    /// <returns>플레이어를 놓친 후 전환할 상태</returns>
     public EnemyState OnPlayerLost(Enemy enemy)
     {
         // 마지막으로 플레이어가 있던 위치로 이동
@@ -101,6 +124,8 @@ public class ChaseBehaviorStrategy : IEnemyBehaviorStrategy
     /// <summary>
     /// 공격 완료 후의 처리를 정의합니다.
     /// </summary>
+    /// <param name="enemy">적 객체</param>
+    /// <returns>공격 종료 후 전환할 상태</returns>
     public EnemyState OnAttackComplete(Enemy enemy)
     {
         // 플레이어가 여전히 공격 범위 내에 있는지 확인
@@ -128,4 +153,5 @@ public class ChaseBehaviorStrategy : IEnemyBehaviorStrategy
 
         return EnemyState.Idle; // 정보가 없으면 대기 상태로
     }
+    #endregion
 }

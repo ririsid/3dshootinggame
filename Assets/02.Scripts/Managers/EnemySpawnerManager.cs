@@ -6,6 +6,7 @@ using UnityEngine;
 /// </summary>
 public class EnemySpawnerManager : Singleton<EnemySpawnerManager>
 {
+    #region 필드
     [Header("스포너 설정")]
     /// <summary>
     /// 게임 시작 시 모든 스포너를 자동으로 활성화할지 여부
@@ -17,6 +18,7 @@ public class EnemySpawnerManager : Singleton<EnemySpawnerManager>
     /// 등록된 모든 스포너 목록
     /// </summary>
     private List<EnemySpawner> _spawners = new List<EnemySpawner>();
+    #endregion
 
     #region Unity 이벤트 함수
     /// <summary>

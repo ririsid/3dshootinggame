@@ -1,35 +1,114 @@
 using UnityEngine;
 using DG.Tweening;
 
+/// <summary>
+/// 게임 내 크로스헤어를 관리하는 UI 컴포넌트입니다.
+/// FPS/TPS 모드에서는 화면 중앙에 고정되고, 쿼터뷰 모드에서는 마우스 위치를 따라다닙니다.
+/// </summary>
 public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
 {
     [Header("크로스헤어 설정")]
+    /// <summary>
+    /// 크로스헤어의 RectTransform 참조
+    /// </summary>
     [SerializeField] private RectTransform _crosshairTransform;
-    [SerializeField] private float _recoilScale = 1.2f;         // 반동 시 확대 배율
-    [SerializeField] private float _recoilDuration = 0.05f;     // 반동 지속 시간
-    [SerializeField] private float _returnDuration = 0.1f;      // 원래 크기로 돌아오는 시간
-    [SerializeField] private Ease _recoilEase = Ease.OutQuad;   // 반동 이징
-    [SerializeField] private Ease _returnEase = Ease.InOutQuad; // 복귀 이징
+
+    /// <summary>
+    /// 반동 시 확대 배율
+    /// </summary>
+    [SerializeField] private float _recoilScale = 1.2f;
+
+    /// <summary>
+    /// 반동 지속 시간
+    /// </summary>
+    [SerializeField] private float _recoilDuration = 0.05f;
+
+    /// <summary>
+    /// 원래 크기로 돌아오는 시간
+    /// </summary>
+    [SerializeField] private float _returnDuration = 0.1f;
+
+    /// <summary>
+    /// 반동 이징
+    /// </summary>
+    [SerializeField] private Ease _recoilEase = Ease.OutQuad;
+
+    /// <summary>
+    /// 복귀 이징
+    /// </summary>
+    [SerializeField] private Ease _returnEase = Ease.InOutQuad;
 
     [Header("쿼터뷰 모드 설정")]
-    [SerializeField] private float _quarterViewRadius = 5f;     // 크로스헤어 이동 반경
-    [SerializeField] private float _smoothSpeed = 10f;          // 이동 부드러움 정도
-    [SerializeField] private float _edgeMargin = 50f;           // 화면 가장자리 마진
-    [SerializeField] private LayerMask _groundLayer;            // 지면 레이어
+    /// <summary>
+    /// 크로스헤어 이동 반경
+    /// </summary>
+    [SerializeField] private float _quarterViewRadius = 5f;
+
+    /// <summary>
+    /// 이동 부드러움 정도
+    /// </summary>
+    [SerializeField] private float _smoothSpeed = 10f;
+
+    /// <summary>
+    /// 화면 가장자리 마진
+    /// </summary>
+    [SerializeField] private float _edgeMargin = 50f;
+
+    /// <summary>
+    /// 지면 레이어
+    /// </summary>
+    [SerializeField] private LayerMask _groundLayer;
 
     [Header("참조")]
+    /// <summary>
+    /// 플레이어 발사 컴포넌트 참조
+    /// </summary>
     [SerializeField] private PlayerFire _playerFire;
-    [SerializeField] private Transform _playerTransform;        // 플레이어 트랜스폼
 
+    /// <summary>
+    /// 플레이어 트랜스폼 참조
+    /// </summary>
+    [SerializeField] private Transform _playerTransform;
+
+    /// <summary>
+    /// 크로스헤어의 원래 크기
+    /// </summary>
     private Vector3 _originalScale;
+
+    /// <summary>
+    /// 현재 실행 중인 트윈 애니메이션
+    /// </summary>
     private Tweener _currentTween;
+
+    /// <summary>
+    /// 현재 카메라 모드
+    /// </summary>
     private CameraEvents.CameraMode _currentCameraMode = CameraEvents.CameraMode.FPS;
+
+    /// <summary>
+    /// 메인 카메라 참조
+    /// </summary>
     private Camera _mainCamera;
-    private Vector3 _targetPosition;                           // 목표 월드 위치
-    private Vector3 _currentWorldPosition;                     // 현재 월드 위치
+
+    /// <summary>
+    /// 목표 월드 위치
+    /// </summary>
+    private Vector3 _targetPosition;
+
+    /// <summary>
+    /// 현재 월드 위치
+    /// </summary>
+    private Vector3 _currentWorldPosition;
+
+    /// <summary>
+    /// 초기화 완료 여부
+    /// </summary>
     private bool _initialized = false;
 
     #region Unity 이벤트 함수
+    /// <summary>
+    /// 컴포넌트 초기화를 수행합니다.
+    /// </summary>
     private void Awake()
     {
         // 크로스헤어 없으면 현재 게임오브젝트의 RectTransform 사용
@@ -40,6 +119,9 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
         _mainCamera = Camera.main;
     }
 
+    /// <summary>
+    /// 초기 설정을 수행합니다.
+    /// </summary>
     private void Start()
     {
         _initialized = true;
@@ -48,8 +130,8 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
             GameObject player = GameObject.FindWithTag("Player");
             if (player != null)
                 _playerTransform = player.transform;
-            else
-                Debug.LogError("[UI_CrosshairComponent] 플레이어를 찾을 수 없습니다.");
+            else if (Debug.isDebugBuild)
+                Debug.LogError("플레이어를 찾을 수 없습니다.");
         }
 
         // 기본 위치 설정 (화면 중앙)
@@ -59,6 +141,9 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
         OnCameraModeChanged(_currentCameraMode);
     }
 
+    /// <summary>
+    /// 매 프레임 크로스헤어 위치를 업데이트합니다.
+    /// </summary>
     private void Update()
     {
         if (!_initialized) return;
@@ -77,6 +162,9 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     #endregion
 
     #region 이벤트 등록
+    /// <summary>
+    /// 이벤트 구독을 등록합니다.
+    /// </summary>
     protected override void RegisterEvents()
     {
         if (_playerFire != null)
@@ -88,6 +176,9 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
         CameraEvents.OnCameraModeChanged += OnCameraModeChanged;
     }
 
+    /// <summary>
+    /// 이벤트 구독을 해제합니다.
+    /// </summary>
     protected override void UnregisterEvents()
     {
         if (_playerFire != null)
@@ -182,6 +273,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     /// <summary>
     /// 화면 중앙에 해당하는 월드 좌표를 반환합니다.
     /// </summary>
+    /// <returns>화면 중앙의 월드 좌표</returns>
     private Vector3 GetWorldPositionFromScreenCenter()
     {
         if (_mainCamera == null) return Vector3.zero;
@@ -204,6 +296,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     /// <summary>
     /// 카메라 모드 변경 이벤트를 처리합니다.
     /// </summary>
+    /// <param name="mode">변경된 카메라 모드</param>
     private void OnCameraModeChanged(CameraEvents.CameraMode mode)
     {
         _currentCameraMode = mode;
@@ -250,6 +343,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     /// <summary>
     /// PlayerFire 참조를 설정합니다. (IUIPlayerComponent 구현)
     /// </summary>
+    /// <param name="playerFire">설정할 플레이어 발사 컴포넌트</param>
     public void SetPlayerFire(PlayerFire playerFire)
     {
         // 기존 이벤트 연결 해제
@@ -265,6 +359,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     /// <summary>
     /// 이전 버전과의 호환성을 위한 메서드
     /// </summary>
+    /// <param name="playerFire">설정할 플레이어 발사 컴포넌트</param>
     public void SetupPlayerFire(PlayerFire playerFire)
     {
         SetPlayerFire(playerFire);
@@ -274,6 +369,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     /// PlayerStat 참조를 설정합니다. (IUIPlayerComponent 구현)
     /// 이 컴포넌트는 PlayerStat을 사용하지 않으므로 빈 구현입니다.
     /// </summary>
+    /// <param name="playerStat">설정할 플레이어 스탯 컴포넌트</param>
     public void SetPlayerStat(PlayerStat playerStat)
     {
         // 이 컴포넌트는 PlayerStat을 사용하지 않으므로 아무 작업도 수행하지 않음
@@ -282,6 +378,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     /// <summary>
     /// 플레이어 Transform을 설정합니다.
     /// </summary>
+    /// <param name="playerTransform">설정할 플레이어 트랜스폼</param>
     public void SetPlayerTransform(Transform playerTransform)
     {
         _playerTransform = playerTransform;
@@ -290,6 +387,7 @@ public class UI_CrosshairComponent : UI_Component, IUIPlayerComponent
     /// <summary>
     /// 현재 크로스헤어의 월드 위치를 반환합니다.
     /// </summary>
+    /// <returns>크로스헤어의 월드 좌표</returns>
     public Vector3 GetCurrentWorldPosition()
     {
         return _currentWorldPosition;
