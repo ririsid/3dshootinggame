@@ -4,15 +4,14 @@
 
 ## 플러그인 디렉토리 구조
 
-모든 서드파티 플러그인은 `Assets/Plugins` 폴더 아래에 배치해야 합니다. 각 플러그인은 자체 하위 폴더에 위치하여 프로젝트 구조를 깔끔하게 유지합니다:
+모든 서드파티 플러그인은 `Assets/Plugins` 디렉토리 아래에 배치해야 합니다. 각 플러그인은 자체 하위 디렉토리에 위치하여 프로젝트 구조를 깔끔하게 유지합니다:
 
 ```
 Assets/
   Plugins/
-    Demigiant/          # DOTween 플러그인
-    JMO Assets/         # War FX 플러그인
-    기타 플러그인 폴더/
-    README.md           # 이 문서
+    Demigiant/       # DOTween 플러그인
+    Other Plugins/   # 기타 플러그인 디렉토리
+    README.md        # 이 문서
 ```
 
 이러한 구조는 플러그인 관리와 업데이트를 용이하게 하며, 특정 플러그인을 `.gitignore`에 추가하는 것도 간편하게 만듭니다.
@@ -33,7 +32,7 @@ Assets/
 
    - 저장소를 클론한 후에는 `.gitignore`에 의해 제외된 플러그인을 수동으로 설치해야 합니다.
    - 필요한 에셋을 Asset Store에서 구매하고 프로젝트에 임포트하세요.
-   - 모든 플러그인은 `Assets/Plugins` 폴더 내에 위치해야 합니다.
+   - 모든 플러그인은 `Assets/Plugins` 디렉토리 내에 위치해야 합니다.
 
 2. **DOTween**:
 
@@ -45,15 +44,10 @@ Assets/
 
    - Asset Store에서 "War FX"를 다운로드하세요.
    - 프로젝트에 임포트 시 샘플 씬을 포함할지 선택할 수 있습니다.
-   - 임포트 후 필요한 경우 `Assets/Plugins/JMO Assets/` 폴더로 이동시키세요.
+   - 임포트 후 필요한 경우 `Assets/Plugins/JMO Assets/` 디렉토리로 이동시키세요.
 
-4. **Unity 내장 패키지**:
+4. **OpenUPM 패키지**:
 
-   - 이 프로젝트는 TextMeshPro, Cinemachine 등의 Unity 내장 패키지를 사용합니다.
-   - 이러한 패키지는 Window > Package Manager에서 "Unity Registry"를 선택하여 설치할 수 있습니다.
-   - 각 패키지를 검색하고 "Install" 버튼을 클릭하세요.
-
-5. **OpenUPM 패키지**:
    - 이 프로젝트는 OpenUPM을 통해 패키지를 관리할 수 있습니다.
    - `Material-Icons Font` 패키지는 다음 명령어를 사용하여 설치할 수 있습니다 (프로젝트 루트 디렉토리에서 실행):
      ```bash
@@ -61,6 +55,12 @@ Assets/
      ```
    - 또는 Unity Package Manager의 Git URL 기능을 사용하여 설치할 수도 있습니다.
    - OpenUPM 설정 및 사용법은 [OpenUPM 문서](https://openupm.com/)를 참조하세요.
+
+5. **Unity 내장 패키지**:
+
+   - 이 프로젝트는 TextMeshPro, Cinemachine 등의 Unity 내장 패키지를 사용합니다.
+   - 이러한 패키지는 Window > Package Manager에서 "Unity Registry"를 선택하여 설치할 수 있습니다.
+   - 각 패키지를 검색하고 "Install" 버튼을 클릭하세요.
 
 ## 라이선스 정보
 
