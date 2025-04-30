@@ -10,19 +10,21 @@ public class UI_AmmoComponent : UI_Component, IUIPlayerComponent
     [Header("UI 참조")]
     [SerializeField] private TextMeshProUGUI _ammoText;
 
+    [Header("플레이어 참조")]
+    [SerializeField] private PlayerFire _playerFire;
+    [SerializeField] private PlayerStat _playerStat;
+
     [Header("텍스트 설정")]
     [SerializeField] private string _ammoTextFormat = "{0} / {1}";
     [SerializeField] private Color _normalColor = Color.white;
     [SerializeField] private Color _lowAmmoColor = Color.red;
     [SerializeField] private float _lowAmmoThreshold = 0.25f; // 탄약이 최대의 25% 이하일 때 색상 변경
-
-    private PlayerFire _playerFire;
     #endregion
 
     #region Unity 이벤트 함수
     private void Start()
     {
-        // PlayerFire 컴포넌트 찾기
+        // Inspector에서 참조가 주입되지 않은 경우 자동으로 찾기
         if (_playerFire == null)
         {
             _playerFire = FindFirstObjectByType<PlayerFire>();
@@ -33,10 +35,16 @@ public class UI_AmmoComponent : UI_Component, IUIPlayerComponent
             }
         }
 
-        // 초기 UI 업데이트
-        if (_playerFire.TryGetComponent<PlayerStat>(out var playerStat))
+        // PlayerStat 참조가 없으면 PlayerFire에서 가져오기
+        if (_playerStat == null && _playerFire != null)
         {
-            UpdateAmmoDisplay(playerStat.CurrentAmmo, playerStat.MaxAmmo);
+            _playerStat = _playerFire.GetComponent<PlayerStat>();
+        }
+
+        // 초기 UI 업데이트
+        if (_playerStat != null)
+        {
+            UpdateAmmoDisplay(_playerStat.CurrentAmmo, _playerStat.MaxAmmo);
         }
     }
     #endregion
@@ -73,27 +81,27 @@ public class UI_AmmoComponent : UI_Component, IUIPlayerComponent
         // 새 이벤트 등록
         RegisterEvents();
 
-        // 초기값으로 UI 업데이트
+        // PlayerStat 참조도 업데이트
         if (_playerFire != null)
         {
-            if (_playerFire.TryGetComponent<PlayerStat>(out var playerStat))
+            _playerStat = _playerFire.GetComponent<PlayerStat>();
+            if (_playerStat != null)
             {
-                UpdateAmmoDisplay(playerStat.CurrentAmmo, playerStat.MaxAmmo);
+                UpdateAmmoDisplay(_playerStat.CurrentAmmo, _playerStat.MaxAmmo);
             }
         }
     }
 
     /// <summary>
     /// PlayerStat 참조 설정 (IUIPlayerComponent 구현)
-    /// 이 컴포넌트는 PlayerStat을 직접 사용하지 않고 PlayerFire를 통해 간접적으로 사용합니다.
     /// </summary>
     public void SetPlayerStat(PlayerStat playerStat)
     {
-        // 이 컴포넌트는 PlayerStat을 직접 사용하지 않으므로 아무 작업도 수행하지 않음
-        // PlayerFire에서 PlayerStat 참조를 가져옴
-        if (_playerFire != null && playerStat != null)
+        _playerStat = playerStat;
+
+        if (_playerStat != null)
         {
-            UpdateAmmoDisplay(playerStat.CurrentAmmo, playerStat.MaxAmmo);
+            UpdateAmmoDisplay(_playerStat.CurrentAmmo, _playerStat.MaxAmmo);
         }
     }
     #endregion
