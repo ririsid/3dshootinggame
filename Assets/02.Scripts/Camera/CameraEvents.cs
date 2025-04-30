@@ -6,6 +6,7 @@ using UnityEngine;
 /// </summary>
 public static class CameraEvents
 {
+    #region 이벤트 정의
     /// <summary>
     /// 카메라 모드가 변경되었을 때 발생하는 이벤트입니다.
     /// </summary>
@@ -15,17 +16,32 @@ public static class CameraEvents
     /// 플레이어 회전이 변경되었을 때 발생하는 이벤트입니다.
     /// </summary>
     public static event Action<Vector2> OnPlayerRotationInput;
+    #endregion
 
+    #region 열거형
     /// <summary>
     /// 카메라 모드를 정의하는 열거형입니다.
     /// </summary>
     public enum CameraMode
     {
-        FPS,     // 1인칭 시점
-        TPS,     // 3인칭 시점
-        Quarter  // 쿼터뷰 시점
-    }
+        /// <summary>
+        /// 1인칭 시점
+        /// </summary>
+        FPS,
 
+        /// <summary>
+        /// 3인칭 시점
+        /// </summary>
+        TPS,
+
+        /// <summary>
+        /// 쿼터뷰 시점
+        /// </summary>
+        Quarter
+    }
+    #endregion
+
+    #region 이벤트 메서드
     /// <summary>
     /// 카메라 모드 변경 이벤트를 발생시킵니다.
     /// </summary>
@@ -43,4 +59,5 @@ public static class CameraEvents
     {
         OnPlayerRotationInput?.Invoke(rotationInput);
     }
+    #endregion
 }

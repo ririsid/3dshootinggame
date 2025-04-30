@@ -9,32 +9,70 @@ public class EnemySpawner : MonoBehaviour
 {
     #region 스포너 설정
     [Header("스포너 설정")]
+    [Tooltip("생성할 적 프리팹")]
     [SerializeField] private GameObject _enemyPrefab;
+
+    [Tooltip("적이 생성될 위치들")]
     [SerializeField] private Transform[] _spawnPoints; // 여러 스폰 지점 지정 가능
+
     [Tooltip("스폰 지점이 없을 경우 현재 위치에서의 스폰 범위")]
     [SerializeField] private float _spawnRadius = 10f;
+
     [Tooltip("생성 간격 (초)")]
     [SerializeField] private float _spawnInterval = 5f;
+
     [Tooltip("최대 생성 수량 (0 = 무제한)")]
     [SerializeField] private int _maxSpawnCount = 10;
+
     [Tooltip("스포너 활성화 시 자동 시작")]
     [SerializeField] private bool _autoStart = true;
+
+    [Header("UI 설정")]
+    [Tooltip("체력바 스포너 참조")]
+    [SerializeField] private EnemyHealthBarSpawner _healthBarSpawner;
     #endregion
 
     #region 디버그 옵션
     [Header("디버그 옵션")]
+    [Tooltip("디버그 스피어 표시 여부")]
     [SerializeField] private bool _showDebugSphere = true;
+
+    [Tooltip("디버그 스피어 색상")]
     [SerializeField] private Color _debugColor = new Color(1f, 0f, 0f, 0.3f);
     #endregion
 
     #region 비공개 변수
+    /// <summary>
+    /// 스폰 진행 중 여부
+    /// </summary>
     private bool _isSpawning = false;
+
+    /// <summary>
+    /// 스폰 코루틴 참조
+    /// </summary>
     private Coroutine _spawnCoroutine;
+
+    /// <summary>
+    /// 현재 스폰된 적의 수
+    /// </summary>
     private int _currentSpawnCount = 0;
+
+    /// <summary>
+    /// 스폰된 적 오브젝트 목록
+    /// </summary>
     private List<GameObject> _spawnedEnemies = new List<GameObject>();
     #endregion
 
     #region Unity 이벤트 함수
+    private void Awake()
+    {
+        // 체력바 스포너가 할당되지 않았을 경우에만 자동으로 찾기
+        if (_healthBarSpawner == null)
+        {
+            _healthBarSpawner = FindObjectsByType<EnemyHealthBarSpawner>(FindObjectsSortMode.None)[0];
+        }
+    }
+
     private void Start()
     {
         // 프리팹이 설정되어 있는지 확인
@@ -114,6 +152,7 @@ public class EnemySpawner : MonoBehaviour
     /// <summary>
     /// 적을 즉시 스폰합니다.
     /// </summary>
+    /// <returns>생성된 적 오브젝트, 생성 실패 시 null</returns>
     public GameObject SpawnEnemy()
     {
         if (_maxSpawnCount > 0 && _currentSpawnCount >= _maxSpawnCount)
@@ -147,6 +186,9 @@ public class EnemySpawner : MonoBehaviour
             // 기존에 연결된 이벤트가 있다면 제거 후 새로 연결
             enemyComponent.OnDeath -= OnEnemyDied;
             enemyComponent.OnDeath += OnEnemyDied;
+
+            // 체력바 캔버스 추가
+            AddHealthBarToEnemy(enemyComponent);
         }
 
         return enemy;
@@ -174,6 +216,7 @@ public class EnemySpawner : MonoBehaviour
     /// <summary>
     /// 적 스폰 코루틴
     /// </summary>
+    /// <returns>코루틴 IEnumerator</returns>
     private IEnumerator SpawnRoutine()
     {
         while (_isSpawning)
@@ -207,9 +250,32 @@ public class EnemySpawner : MonoBehaviour
     }
 
     /// <summary>
+    /// 적에게 체력바 캔버스를 추가합니다.
+    /// </summary>
+    /// <param name="enemy">체력바를 추가할 적 객체</param>
+    private void AddHealthBarToEnemy(Enemy enemy)
+    {
+        if (enemy == null) return;
+
+        // 체력바 스포너가 없으면 경고
+        if (_healthBarSpawner == null)
+        {
+            Debug.LogWarning("체력바 스포너가 할당되지 않았습니다.");
+            return;
+        }
+
+        // 기존 체력바가 있는지 타입으로 확인
+        UI_EnemyHealthBar existingHealthBar = enemy.GetComponentInChildren<UI_EnemyHealthBar>();
+        if (existingHealthBar != null) return;
+
+        // 체력바 스포너를 사용하여 체력바 생성
+        _healthBarSpawner.SpawnHealthBarForEnemy(enemy);
+    }
+
+    /// <summary>
     /// 적이 사망했을 때 호출되는 메서드
     /// </summary>
-    /// <param name="enemy">사망한 적 게임오브젝트</param>
+    /// <param name="enemy">사망한 적 오브젝트</param>
     private void OnEnemyDied(GameObject enemy)
     {
         if (_spawnedEnemies.Contains(enemy))

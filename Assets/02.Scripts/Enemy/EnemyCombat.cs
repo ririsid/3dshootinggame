@@ -6,28 +6,103 @@ using System.Collections;
 /// </summary>
 public class EnemyCombat : MonoBehaviour
 {
+    #region 필드
     [Header("전투 설정")]
+    /// <summary>
+    /// 적의 최대 체력
+    /// </summary>
     [SerializeField] private int _maxHealth = 100;
+
+    /// <summary>
+    /// 공격 쿨다운 시간(초)
+    /// </summary>
     [SerializeField] private float _attackCooldown = 1f;
+
+    /// <summary>
+    /// 공격 데미지
+    /// </summary>
     [SerializeField] private int _attackDamage = 15;
+
+    /// <summary>
+    /// 공격 범위
+    /// </summary>
     [SerializeField] private float _attackRadius = 1.2f;
 
     [Header("공격 효과")]
+    /// <summary>
+    /// 공격 사운드
+    /// </summary>
     [SerializeField] private AudioClip _attackSound;
+
+    /// <summary>
+    /// 공격 이펙트 프리팹
+    /// </summary>
     [SerializeField] private GameObject _attackEffectPrefab;
+
+    /// <summary>
+    /// 공격 이펙트 생성 위치
+    /// </summary>
     [SerializeField] private Transform _attackEffectPoint;
 
+    /// <summary>
+    /// 현재 체력
+    /// </summary>
     private int _currentHealth;
+
+    /// <summary>
+    /// 공격 쿨다운 타이머
+    /// </summary>
     private float _attackCooldownTimer = 0f;
+
+    /// <summary>
+    /// 사망 여부
+    /// </summary>
     private bool _isDead = false;
+
+    /// <summary>
+    /// 공격 중 여부
+    /// </summary>
     private bool _isAttacking = false;
 
+    /// <summary>
+    /// Enemy 컴포넌트 참조
+    /// </summary>
     private Enemy _enemy;
+
+    /// <summary>
+    /// EnemyEffects 컴포넌트 참조
+    /// </summary>
     private EnemyEffects _enemyEffects;
+
+    /// <summary>
+    /// AudioSource 컴포넌트 참조
+    /// </summary>
     private AudioSource _audioSource;
+
+    /// <summary>
+    /// Animator 컴포넌트 참조
+    /// </summary>
     private Animator _animator;
+    #endregion
+
+    #region 이벤트
+    /// <summary>
+    /// 체력 변경 시 발생하는 이벤트입니다.
+    /// </summary>
+    /// <param name="currentHealth">현재 체력</param>
+    /// <param name="maxHealth">최대 체력</param>
+    public delegate void HealthChangedHandler(float currentHealth, float maxHealth);
+
+    /// <summary>
+    /// 체력이 변경될 때 발생하는 이벤트
+    /// </summary>
+    public event HealthChangedHandler OnHealthChanged;
+    #endregion
 
     #region Unity 이벤트 함수
+    /// <summary>
+    /// 컴포넌트 초기화를 수행합니다.
+    /// </summary>
     private void Awake()
     {
         _enemy = GetComponent<Enemy>();
@@ -53,6 +128,9 @@ public class EnemyCombat : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 매 프레임 공격 쿨다운과 상태를 업데이트합니다.
+    /// </summary>
     private void Update()
     {
         if (_enemy.GetComponent<EnemyStateMachine>().CurrentStateType == EnemyState.Attack)
@@ -72,8 +150,10 @@ public class EnemyCombat : MonoBehaviour
     /// <summary>
     /// 데미지를 처리합니다.
     /// </summary>
+    /// <param name="damage">적용할 데미지 정보</param>
     public void TakeDamage(Damage damage)
     {
+        // 이미 죽었거나 피격 중인 경우 무시
         if (_isDead || _enemyEffects.IsDamaged) return;
 
         _currentHealth -= damage.Amount;
@@ -84,9 +164,13 @@ public class EnemyCombat : MonoBehaviour
             Debug.Log($"적 피격! 체력: {_currentHealth}/{_maxHealth}");
         }
 
+        // 체력 변경 이벤트 발생
+        OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+
         // 넉백 효과 적용
         _enemyEffects.ApplyDamageEffect(damage.Source.transform.position);
 
+        // 체력이 0 이하면 사망 처리
         if (_currentHealth <= 0)
         {
             _currentHealth = 0;
@@ -134,6 +218,8 @@ public class EnemyCombat : MonoBehaviour
     /// <summary>
     /// 실제 공격을 수행하는 코루틴
     /// </summary>
+    /// <param name="target">공격 대상 게임 오브젝트</param>
+    /// <returns>코루틴 열거자</returns>
     private IEnumerator PerformAttack(GameObject target)
     {
         _isAttacking = true;
@@ -181,11 +267,6 @@ public class EnemyCombat : MonoBehaviour
 
                 // 데미지 적용
                 damageable.TakeDamage(damage);
-
-                if (Debug.isDebugBuild)
-                {
-                    Debug.Log($"적이 플레이어에게 {_attackDamage}의 데미지를 입혔습니다!");
-                }
             }
         }
 
@@ -231,5 +312,15 @@ public class EnemyCombat : MonoBehaviour
     /// 현재 공격 중인지 여부
     /// </summary>
     public bool IsAttacking => _isAttacking;
+
+    /// <summary>
+    /// 최대 체력
+    /// </summary>
+    public int MaxHealth => _maxHealth;
+
+    /// <summary>
+    /// 현재 체력
+    /// </summary>
+    public int CurrentHealth => _currentHealth;
     #endregion
 }

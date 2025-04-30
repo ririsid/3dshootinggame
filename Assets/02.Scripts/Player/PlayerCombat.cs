@@ -7,6 +7,7 @@ using UnityEngine;
 /// </summary>
 public class PlayerCombat : MonoBehaviour, IDamageable
 {
+    #region 필드
     [Header("전투 설정")]
     [SerializeField] private int _maxHealth = 100;
     [SerializeField] private float _invincibilityDuration = 1f; // 피격 후 무적 시간
@@ -34,13 +35,22 @@ public class PlayerCombat : MonoBehaviour, IDamageable
     private PlayerStat _playerStat;
     private PlayerMove _playerMove;
     private PlayerFire _playerFire;
+    #endregion
 
     #region 이벤트
-    // 체력 변경 이벤트
-    public event Action<int, int> OnHealthChanged; // (현재 체력, 최대 체력)
-    // 사망 이벤트
+    /// <summary>
+    /// 체력 변경 시 발생하는 이벤트입니다. (현재 체력, 최대 체력)
+    /// </summary>
+    public event Action<int, int> OnHealthChanged;
+
+    /// <summary>
+    /// 플레이어 사망 시 발생하는 이벤트입니다.
+    /// </summary>
     public event Action OnPlayerDied;
-    // 피격 이벤트
+
+    /// <summary>
+    /// 플레이어 피격 시 발생하는 이벤트입니다. 데미지 정보를 전달합니다.
+    /// </summary>
     public event Action<Damage> OnPlayerHit;
     #endregion
 
@@ -176,8 +186,6 @@ public class PlayerCombat : MonoBehaviour, IDamageable
 
         // 사망 이벤트 발생
         OnPlayerDied?.Invoke();
-
-        Debug.Log("플레이어 사망!");
 
         // TODO: 사망 처리 추가 (애니메이션, 게임오버 처리 등)
     }

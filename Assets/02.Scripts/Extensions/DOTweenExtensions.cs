@@ -6,6 +6,7 @@ using DG.Tweening;
 /// </summary>
 public static class DOTweenExtensions
 {
+    #region 공개 메서드
     /// <summary>
     /// 트랜스폼의 localPosition을 흔들리게 합니다.
     /// </summary>
@@ -137,4 +138,5 @@ public static class DOTweenExtensions
         // 시퀀스 반환
         return sequence.SetTarget(target).SetUpdate(true).SetId("DOLocalShakeRotation").SetEase(Ease.Linear);
     }
+    #endregion
 }

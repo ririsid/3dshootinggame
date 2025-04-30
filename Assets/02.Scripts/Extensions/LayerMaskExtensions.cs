@@ -2,8 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// LayerMask에 대한 확장 메서드를 제공하는 클래스입니다.
+/// </summary>
 public static class LayerMaskExtensions
 {
+    #region 공개 메서드
     /// <summary>
     /// LayerMask에 포함된 모든 레이어의 인덱스를 배열로 반환합니다.
     /// </summary>
@@ -38,7 +42,9 @@ public static class LayerMaskExtensions
 
         return layers.ToArray();
     }
+    #endregion
 
+    #region 비공개 메서드
     /// <summary>
     /// 정수의 비트 중 1인 비트의 개수를 계산합니다.
     /// </summary>
@@ -69,4 +75,5 @@ public static class LayerMaskExtensions
         // 비트 위치 계산 (log2 구현)
         return (int)Math.Log(isolatedLowestBit, 2);
     }
+    #endregion
 }

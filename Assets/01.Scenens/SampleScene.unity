@@ -4574,6 +4574,52 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 29132243512441732, guid: 9541d8871f9777a4a85cbe9cd578c70c, type: 3}
   m_PrefabInstance: {fileID: 1835480162}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1903247271
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1903247272}
+  - component: {fileID: 1903247273}
+  m_Layer: 0
+  m_Name: EnemyHealthBarSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1903247272
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1903247271}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1903247273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1903247271}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7e74aae5754b9f429057ae6cade22f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _healthBarPrefab: {fileID: 3608216262475581755, guid: a6928ee6fcdfe0d4fa3ed255199f411a, type: 3}
+  _autoSpawnOnStart: 1
 --- !u!1 &1936829022
 GameObject:
   m_ObjectHideFlags: 0
@@ -5681,6 +5727,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 9172362966565551770, guid: cd4a75c6d3149ed4fa74d824d2a837f0, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9172362966565551770, guid: cd4a75c6d3149ed4fa74d824d2a837f0, type: 3}
+      propertyPath: _healthBar
+      value: 
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5859,6 +5913,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3930132652908544355, guid: e50c3b501725985418977b09089e7371, type: 3}
+      propertyPath: _healthBarSpawner
+      value: 
+      objectReference: {fileID: 1903247273}
     - target: {fileID: 7886869130487516695, guid: e50c3b501725985418977b09089e7371, type: 3}
       propertyPath: m_Name
       value: EnemySpawner
@@ -5959,6 +6017,7 @@ SceneRoots:
   - {fileID: 1964264920}
   - {fileID: 4045291182734796355}
   - {fileID: 5258266055046432571}
+  - {fileID: 1903247272}
   - {fileID: 1429605863}
   - {fileID: 2126729824}
   - {fileID: 767594345}

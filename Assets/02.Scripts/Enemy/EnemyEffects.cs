@@ -39,6 +39,7 @@ public class EnemyEffects : MonoBehaviour
     /// <summary>
     /// 피격 효과를 적용합니다.
     /// </summary>
+    /// <param name="damageSourcePosition">피해의 근원지 위치</param>
     public void ApplyDamageEffect(Vector3 damageSourcePosition)
     {
         if (_enemy.GetComponent<EnemyCombat>().IsDead || _isDamaged) return;
@@ -81,6 +82,10 @@ public class EnemyEffects : MonoBehaviour
     #endregion
 
     #region 비공개 메서드
+    /// <summary>
+    /// 피격 효과를 처리하는 코루틴입니다.
+    /// </summary>
+    /// <returns>코루틴 열거자</returns>
     private IEnumerator DamageEffectCoroutine()
     {
         _isDamaged = true;
@@ -144,6 +149,9 @@ public class EnemyEffects : MonoBehaviour
     #endregion
 
     #region 프로퍼티
+    /// <summary>
+    /// 현재 피격 상태인지 여부를 반환합니다.
+    /// </summary>
     public bool IsDamaged => _isDamaged;
     #endregion
 }

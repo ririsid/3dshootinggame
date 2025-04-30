@@ -7,27 +7,80 @@ using DG.Tweening;
 /// </summary>
 public class CameraShake : MonoBehaviour
 {
+    #region 필드
     [Header("참조")]
-    [SerializeField] private Transform _cameraTransform;        // 실제 카메라 Transform
-    [SerializeField] private PlayerFire _playerFire;            // 플레이어 발사 컴포넌트
+    /// <summary>
+    /// 실제 카메라 Transform
+    /// </summary>
+    [SerializeField] private Transform _cameraTransform;
+
+    /// <summary>
+    /// 플레이어 발사 컴포넌트
+    /// </summary>
+    [SerializeField] private PlayerFire _playerFire;
 
     [Header("흔들림 설정")]
-    [SerializeField] private bool _enableShake = true;          // 흔들림 활성화 여부
-    [SerializeField] private float _shakeStrength = 0.05f;      // 흔들림 강도
-    [SerializeField] private float _shakeDuration = 0.1f;       // 흔들림 지속 시간
-    [SerializeField] private int _shakeVibrato = 20;            // 흔들림 진동 횟수
-    [SerializeField] private float _shakeRandomness = 90f;      // 흔들림 무작위성 (0-90)
-    [SerializeField] private bool _fadeOut = true;              // 페이드 아웃 여부
+    /// <summary>
+    /// 흔들림 활성화 여부
+    /// </summary>
+    [SerializeField] private bool _enableShake = true;
+
+    /// <summary>
+    /// 흔들림 강도
+    /// </summary>
+    [SerializeField] private float _shakeStrength = 0.05f;
+
+    /// <summary>
+    /// 흔들림 지속 시간
+    /// </summary>
+    [SerializeField] private float _shakeDuration = 0.1f;
+
+    /// <summary>
+    /// 흔들림 진동 횟수
+    /// </summary>
+    [SerializeField] private int _shakeVibrato = 20;
+
+    /// <summary>
+    /// 흔들림 무작위성 (0-90)
+    /// </summary>
+    [SerializeField] private float _shakeRandomness = 90f;
+
+    /// <summary>
+    /// 페이드 아웃 여부
+    /// </summary>
+    [SerializeField] private bool _fadeOut = true;
 
     [Header("카메라 모드별 강도 배율")]
-    [SerializeField] private float _fpsShakeMultiplier = 1.0f;  // FPS 모드 강도 배율
-    [SerializeField] private float _tpsShakeMultiplier = 0.7f;  // TPS 모드 강도 배율
-    [SerializeField] private float _quarterShakeMultiplier = 0.4f; // 쿼터뷰 모드 강도 배율
+    /// <summary>
+    /// FPS 모드 강도 배율
+    /// </summary>
+    [SerializeField] private float _fpsShakeMultiplier = 1.0f;
 
+    /// <summary>
+    /// TPS 모드 강도 배율
+    /// </summary>
+    [SerializeField] private float _tpsShakeMultiplier = 0.7f;
+
+    /// <summary>
+    /// 쿼터뷰 모드 강도 배율
+    /// </summary>
+    [SerializeField] private float _quarterShakeMultiplier = 0.4f;
+
+    /// <summary>
+    /// 현재 카메라 모드
+    /// </summary>
     private CameraEvents.CameraMode _currentCameraMode = CameraEvents.CameraMode.FPS;
+
+    /// <summary>
+    /// 현재 실행 중인 흔들림 효과의 Tween
+    /// </summary>
     private Tween _currentShakeTween;
+    #endregion
 
     #region Unity 이벤트 함수
+    /// <summary>
+    /// 초기화를 수행합니다.
+    /// </summary>
     private void Start()
     {
         // 카메라 참조가 없으면 자동으로 찾기
@@ -53,12 +106,18 @@ public class CameraShake : MonoBehaviour
         RegisterEvents();
     }
 
+    /// <summary>
+    /// 컴포넌트가 활성화될 때 이벤트를 구독합니다.
+    /// </summary>
     private void OnEnable()
     {
         // 필요한 경우 이벤트 구독
         RegisterEvents();
     }
 
+    /// <summary>
+    /// 컴포넌트가 비활성화될 때 이벤트 구독을 해제합니다.
+    /// </summary>
     private void OnDisable()
     {
         // 이벤트 구독 해제
@@ -68,6 +127,9 @@ public class CameraShake : MonoBehaviour
         StopAllShakes();
     }
 
+    /// <summary>
+    /// 컴포넌트가 파괴될 때 정리 작업을 수행합니다.
+    /// </summary>
     private void OnDestroy()
     {
         // 이벤트 구독 해제
@@ -110,6 +172,7 @@ public class CameraShake : MonoBehaviour
     /// <summary>
     /// 카메라 모드 변경 이벤트를 처리합니다.
     /// </summary>
+    /// <param name="mode">변경된 카메라 모드</param>
     private void HandleCameraModeChanged(CameraEvents.CameraMode mode)
     {
         _currentCameraMode = mode;
@@ -147,6 +210,7 @@ public class CameraShake : MonoBehaviour
     /// <summary>
     /// 위치 기반 흔들림을 적용합니다.
     /// </summary>
+    /// <param name="multiplier">강도 배율</param>
     private void ShakePosition(float multiplier)
     {
         // 로컬 좌표계에서 위치 흔들림
@@ -162,6 +226,7 @@ public class CameraShake : MonoBehaviour
     /// <summary>
     /// 회전 기반 흔들림을 적용합니다.
     /// </summary>
+    /// <param name="multiplier">강도 배율</param>
     private void ShakeRotation(float multiplier)
     {
         // 로컬 좌표계에서 회전 흔들림 적용
@@ -189,6 +254,7 @@ public class CameraShake : MonoBehaviour
     /// <summary>
     /// 현재 카메라 모드에 따른 흔들림 강도 배율을 반환합니다.
     /// </summary>
+    /// <returns>모드에 따른 강도 배율</returns>
     private float GetShakeMultiplierByMode()
     {
         switch (_currentCameraMode)
@@ -209,6 +275,7 @@ public class CameraShake : MonoBehaviour
     /// <summary>
     /// 플레이어 발사 컴포넌트를 설정합니다.
     /// </summary>
+    /// <param name="playerFire">설정할 플레이어 발사 컴포넌트</param>
     public void SetPlayerFire(PlayerFire playerFire)
     {
         // 이전 이벤트 구독 해제
@@ -249,8 +316,12 @@ public class CameraShake : MonoBehaviour
             ShakePosition(strengthMultiplier);
         }
     }
+    #endregion
 
-    // 흔들림 상태를 확인할 수 있는 프로퍼티 추가
+    #region 프로퍼티
+    /// <summary>
+    /// 현재 카메라 흔들림이 진행 중인지 여부
+    /// </summary>
     public bool IsShaking => _currentShakeTween != null && _currentShakeTween.IsActive();
     #endregion
 }
