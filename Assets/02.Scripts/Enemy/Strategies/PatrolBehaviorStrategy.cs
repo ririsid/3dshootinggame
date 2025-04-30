@@ -5,11 +5,18 @@ using UnityEngine;
 /// </summary>
 public class PatrolBehaviorStrategy : IEnemyBehaviorStrategy
 {
+    #region 필드
+    /// <summary>
+    /// 순찰 대기 시간을 추적하는 타이머
+    /// </summary>
     private float _patrolTimer = 0f;
+    #endregion
 
+    #region IEnemyBehaviorStrategy 구현
     /// <summary>
     /// 초기 상태를 반환합니다.
     /// </summary>
+    /// <returns>초기 상태(대기 상태)</returns>
     public EnemyState GetInitialState()
     {
         return EnemyState.Idle;
@@ -19,6 +26,7 @@ public class PatrolBehaviorStrategy : IEnemyBehaviorStrategy
     /// Idle 상태에서의 동작을 처리합니다.
     /// (기존 패트롤 상태의 기능 포함)
     /// </summary>
+    /// <param name="enemy">적 객체</param>
     public void OnIdle(Enemy enemy)
     {
         // 웨이포인트가 있는 경우 순찰 동작 수행
@@ -44,6 +52,10 @@ public class PatrolBehaviorStrategy : IEnemyBehaviorStrategy
     /// <summary>
     /// 적이 플레이어를 감지했을 때의 처리를 정의합니다.
     /// </summary>
+    /// <param name="enemy">적 객체</param>
+    /// <param name="playerPosition">플레이어 위치</param>
+    /// <param name="distanceToPlayer">플레이어까지의 거리</param>
+    /// <returns>감지 후 전환할 상태</returns>
     public EnemyState OnPlayerDetected(Enemy enemy, Vector3 playerPosition, float distanceToPlayer)
     {
         // 감지 거리 내에 있고 시야에 있는지 확인
@@ -59,6 +71,8 @@ public class PatrolBehaviorStrategy : IEnemyBehaviorStrategy
     /// <summary>
     /// 플레이어를 놓쳤을 때의 처리를 정의합니다.
     /// </summary>
+    /// <param name="enemy">적 객체</param>
+    /// <returns>플레이어를 놓친 후 전환할 상태</returns>
     public EnemyState OnPlayerLost(Enemy enemy)
     {
         // 순찰 중이었다면 순찰 중지
@@ -73,6 +87,8 @@ public class PatrolBehaviorStrategy : IEnemyBehaviorStrategy
     /// <summary>
     /// 공격 완료 후의 처리를 정의합니다.
     /// </summary>
+    /// <param name="enemy">적 객체</param>
+    /// <returns>공격 종료 후 전환할 상태</returns>
     public EnemyState OnAttackComplete(Enemy enemy)
     {
         // 플레이어가 여전히 공격 범위 내에 있는지 확인
@@ -92,4 +108,5 @@ public class PatrolBehaviorStrategy : IEnemyBehaviorStrategy
 
         return EnemyState.Return; // 복귀
     }
+    #endregion
 }

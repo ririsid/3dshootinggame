@@ -6,19 +6,44 @@ using UnityEngine;
 /// </summary>
 public class AttackState : IEnemyState
 {
+    #region 필드
+    /// <summary>
+    /// 적 참조
+    /// </summary>
     private Enemy _enemy;
+
+    /// <summary>
+    /// 공격 코루틴 참조
+    /// </summary>
     private Coroutine _attackCoroutine;
+
+    /// <summary>
+    /// 적 전투 컴포넌트 참조
+    /// </summary>
     private EnemyCombat _enemyCombat;
 
-    // 공격 관련 변수
+    /// <summary>
+    /// 공격 위치 업데이트 타이머
+    /// </summary>
     private float _positionUpdateTimer = 0f;
+    #endregion
 
+    #region 생성자
+    /// <summary>
+    /// 생성자
+    /// </summary>
+    /// <param name="enemy">적 객체</param>
     public AttackState(Enemy enemy)
     {
         _enemy = enemy;
         _enemyCombat = enemy.GetComponent<EnemyCombat>();
     }
+    #endregion
 
+    #region IEnemyState 구현
+    /// <summary>
+    /// 상태 진입 시 호출됩니다.
+    /// </summary>
     public void Enter()
     {
         _positionUpdateTimer = 0f;
@@ -33,6 +58,9 @@ public class AttackState : IEnemyState
         _attackCoroutine = _enemy.StartCoroutine(AttackCoroutine());
     }
 
+    /// <summary>
+    /// 상태 종료 시 호출됩니다.
+    /// </summary>
     public void Exit()
     {
         if (_attackCoroutine != null)
@@ -48,12 +76,18 @@ public class AttackState : IEnemyState
         }
     }
 
+    /// <summary>
+    /// 매 프레임 호출되는 업데이트 메서드입니다.
+    /// </summary>
     public void Update()
     {
         // 코루틴에서 처리하지만, 상태 전환은 더 자주 확인
         CheckTransitions();
     }
 
+    /// <summary>
+    /// 다른 상태로의 전환 조건을 확인합니다.
+    /// </summary>
     public void CheckTransitions()
     {
         if (_enemy.Player == null)
@@ -77,7 +111,12 @@ public class AttackState : IEnemyState
             _enemy.CompleteAttack();
         }
     }
+    #endregion
 
+    #region 비공개 메서드
+    /// <summary>
+    /// 공격 동작을 처리하는 코루틴
+    /// </summary>
     private IEnumerator AttackCoroutine()
     {
         while (true)
@@ -142,6 +181,8 @@ public class AttackState : IEnemyState
     /// <summary>
     /// 플레이어 주변에서 최적의 공격 위치를 찾아 이동합니다.
     /// </summary>
+    /// <param name="playerPosition">플레이어 위치</param>
+    /// <param name="optimalDistance">최적 공격 거리</param>
     private void FindAndMoveToOptimalAttackPosition(Vector3 playerPosition, float optimalDistance)
     {
         if (!_enemy.IsAgentValid()) return;
@@ -215,6 +256,7 @@ public class AttackState : IEnemyState
     /// <summary>
     /// 플레이어의 위치 변화를 감지하고 필요시 공격 위치를 조정합니다.
     /// </summary>
+    /// <param name="playerPosition">플레이어 위치</param>
     private void CheckAndAdjustAttackPosition(Vector3 playerPosition)
     {
         if (!_enemy.IsAgentValid()) return;
@@ -253,6 +295,7 @@ public class AttackState : IEnemyState
     /// <summary>
     /// 지정된 시간 후 NavMeshAgent를 정지시킵니다.
     /// </summary>
+    /// <param name="delay">지연 시간</param>
     private IEnumerator StopAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -263,4 +306,5 @@ public class AttackState : IEnemyState
             _enemy.Agent.ResetPath();
         }
     }
+    #endregion
 }

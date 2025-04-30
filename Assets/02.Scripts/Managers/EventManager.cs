@@ -10,8 +10,11 @@ public class EventManager : Singleton<EventManager>
     // 플레이어가 피격됐을 때 발생하는 이벤트
     public event Action<Damage> OnPlayerDamaged;
 
-    // 필요에 따라 여기에 추가 이벤트를 정의할 수 있습니다
-    // public event Action<데이터타입> 이벤트이름;
+    // 플레이어가 죽었을 때 발생하는 이벤트
+    public event Action OnPlayerDeath;
+
+    // 적이 죽었을 때 발생하는 이벤트 (경험치, 처치한 적 정보)
+    public event Action<int, Enemy> OnEnemyDeath;
     #endregion
 
     #region Unity 이벤트 함수
@@ -30,6 +33,24 @@ public class EventManager : Singleton<EventManager>
     public void TriggerPlayerDamaged(Damage damage)
     {
         OnPlayerDamaged?.Invoke(damage);
+    }
+
+    /// <summary>
+    /// 플레이어 사망 이벤트를 발생시킵니다
+    /// </summary>
+    public void TriggerPlayerDeath()
+    {
+        OnPlayerDeath?.Invoke();
+    }
+
+    /// <summary>
+    /// 적 사망 이벤트를 발생시킵니다
+    /// </summary>
+    /// <param name="experienceValue">제공되는 경험치 값</param>
+    /// <param name="enemy">사망한 적 객체</param>
+    public void TriggerEnemyDeath(int experienceValue, Enemy enemy)
+    {
+        OnEnemyDeath?.Invoke(experienceValue, enemy);
     }
     #endregion
 }

@@ -127,7 +127,6 @@ public class PlayerFire : MonoBehaviour
         {
             ObjectPoolManager.Instance.InitializePool(_bombPrefab, _initialPoolSize);
             _isBombPoolInitialized = true;
-            Debug.Log($"폭탄 오브젝트 풀 초기화 완료 (크기: {_initialPoolSize})");
         }
     }
 

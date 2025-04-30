@@ -6,16 +6,43 @@ using UnityEngine;
 /// </summary>
 public class TraceState : IEnemyState
 {
+    #region 필드
+    /// <summary>
+    /// Enemy 컴포넌트 참조
+    /// </summary>
     private Enemy _enemy;
-    private Coroutine _traceCoroutine;
-    private float _traceTimer = 0f;
-    private float _pathUpdateTimer = 0f;
 
+    /// <summary>
+    /// 추적 코루틴 참조
+    /// </summary>
+    private Coroutine _traceCoroutine;
+
+    /// <summary>
+    /// 추적 지속 시간 추적 타이머
+    /// </summary>
+    private float _traceTimer = 0f;
+
+    /// <summary>
+    /// 경로 업데이트 간격 타이머
+    /// </summary>
+    private float _pathUpdateTimer = 0f;
+    #endregion
+
+    #region 생성자
+    /// <summary>
+    /// TraceState 생성자
+    /// </summary>
+    /// <param name="enemy">Enemy 컴포넌트 참조</param>
     public TraceState(Enemy enemy)
     {
         _enemy = enemy;
     }
+    #endregion
 
+    #region IEnemyState 구현
+    /// <summary>
+    /// 추적 상태에 진입할 때 호출됩니다.
+    /// </summary>
     public void Enter()
     {
         _traceTimer = 0f;
@@ -30,6 +57,9 @@ public class TraceState : IEnemyState
         _traceCoroutine = _enemy.StartCoroutine(TraceCoroutine());
     }
 
+    /// <summary>
+    /// 추적 상태에서 나갈 때 호출됩니다.
+    /// </summary>
     public void Exit()
     {
         if (_traceCoroutine != null)
@@ -39,12 +69,18 @@ public class TraceState : IEnemyState
         }
     }
 
+    /// <summary>
+    /// 추적 상태의 매 프레임 호출되는 업데이트 함수입니다.
+    /// </summary>
     public void Update()
     {
         // 코루틴에서 처리하지만, 상태 전환은 더 자주 확인
         CheckTransitions();
     }
 
+    /// <summary>
+    /// 다른 상태로의 전환 조건을 확인합니다.
+    /// </summary>
     public void CheckTransitions()
     {
         if (_enemy.Player == null)
@@ -70,7 +106,12 @@ public class TraceState : IEnemyState
             }
         }
     }
+    #endregion
 
+    #region 비공개 메서드
+    /// <summary>
+    /// 플레이어를 추적하는 코루틴입니다.
+    /// </summary>
     private IEnumerator TraceCoroutine()
     {
         while (true)
@@ -131,4 +172,5 @@ public class TraceState : IEnemyState
             yield return null;
         }
     }
+    #endregion
 }

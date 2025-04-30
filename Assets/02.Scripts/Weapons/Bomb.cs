@@ -2,6 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 폭발 효과와 피해를 주는 폭탄 클래스입니다.
+/// </summary>
+/// <remarks>
+/// 오브젝트 풀링을 통해 최적화되었으며, 충돌 시 폭발합니다.
+/// </remarks>
 public class Bomb : MonoBehaviour
 {
     #region 필드
@@ -36,8 +42,9 @@ public class Bomb : MonoBehaviour
     }
 
     /// <summary>
-    /// 충돌 감지 시 호출됩니다
+    /// 충돌 감지 시 호출됩니다.
     /// </summary>
+    /// <param name="collision">충돌한 대상 정보</param>
     private void OnCollisionEnter(Collision collision)
     {
         // 안전 딜레이 확인 - 폭탄이 생성된 직후 충돌은 무시
@@ -50,8 +57,11 @@ public class Bomb : MonoBehaviour
 
     #region 공개 메서드
     /// <summary>
-    /// 폭탄 폭발 처리
+    /// 폭탄 폭발 처리를 수행합니다.
     /// </summary>
+    /// <remarks>
+    /// 폭발 이펙트를 생성하고, 반경 내 모든 IDamageable 객체에 피해를 입힙니다.
+    /// </remarks>
     public void Explode()
     {
         if (_hasExploded) return; // 이미 폭발했다면 무시
@@ -107,18 +117,17 @@ public class Bomb : MonoBehaviour
     }
 
     /// <summary>
-    /// 오브젝트 풀로 반환
+    /// 이 폭탄을 오브젝트 풀로 반환합니다.
     /// </summary>
     public void ReturnToPool()
     {
-        // 객체는 풀로 반환
         ObjectPoolManager.Instance.ReturnToPool(gameObject);
     }
     #endregion
 
     #region 비공개 메서드
     /// <summary>
-    /// 폭발 이펙트 오브젝트 풀 초기화
+    /// 폭발 이펙트 오브젝트 풀을 초기화합니다.
     /// </summary>
     private void InitializeExplosionEffectPool()
     {
@@ -127,13 +136,14 @@ public class Bomb : MonoBehaviour
             // 오브젝트 풀 초기화 (이펙트는 여러 개 필요할 수 있으므로 여유있게 설정)
             ObjectPoolManager.Instance.InitializePool(_explosionEffectPrefab, 10);
             _isExplosionEffectPoolInitialized = true;
-            Debug.Log($"{_explosionEffectPrefab.name} 폭발 이펙트 오브젝트 풀 초기화 완료");
         }
     }
 
     /// <summary>
-    /// 지정된 시간 후 이펙트를 풀에 반환
+    /// 지정된 시간 후 이펙트를 풀에 반환합니다.
     /// </summary>
+    /// <param name="effect">반환할 이펙트 게임 오브젝트</param>
+    /// <param name="delay">반환 전 대기 시간(초)</param>
     private IEnumerator ReturnEffectToPool(GameObject effect, float delay)
     {
         yield return new WaitForSeconds(delay);

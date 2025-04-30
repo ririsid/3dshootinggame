@@ -6,15 +6,38 @@ using UnityEngine;
 /// </summary>
 public class IdleState : IEnemyState
 {
+    #region 필드
+    /// <summary>
+    /// Enemy 컴포넌트 참조
+    /// </summary>
     private Enemy _enemy;
-    private Coroutine _lookAroundCoroutine;
-    private float _idleTimer = 0f;
 
+    /// <summary>
+    /// 주변 둘러보기 코루틴 참조
+    /// </summary>
+    private Coroutine _lookAroundCoroutine;
+
+    /// <summary>
+    /// 대기 상태 지속 타이머
+    /// </summary>
+    private float _idleTimer = 0f;
+    #endregion
+
+    #region 생성자
+    /// <summary>
+    /// IdleState 생성자
+    /// </summary>
+    /// <param name="enemy">Enemy 컴포넌트 참조</param>
     public IdleState(Enemy enemy)
     {
         _enemy = enemy;
     }
+    #endregion
 
+    #region IEnemyState 구현
+    /// <summary>
+    /// 대기 상태에 진입할 때 호출됩니다.
+    /// </summary>
     public void Enter()
     {
         _idleTimer = 0f;
@@ -27,6 +50,9 @@ public class IdleState : IEnemyState
         }
     }
 
+    /// <summary>
+    /// 대기 상태에서 나갈 때 호출됩니다.
+    /// </summary>
     public void Exit()
     {
         if (_lookAroundCoroutine != null)
@@ -36,6 +62,9 @@ public class IdleState : IEnemyState
         }
     }
 
+    /// <summary>
+    /// 대기 상태의 매 프레임 호출되는 업데이트 함수입니다.
+    /// </summary>
     public void Update()
     {
         // 전략 패턴의 Idle 동작 수행
@@ -46,12 +75,17 @@ public class IdleState : IEnemyState
         CheckTransitions();
     }
 
+    /// <summary>
+    /// 다른 상태로의 전환 조건을 확인합니다.
+    /// </summary>
     public void CheckTransitions()
     {
         // 플레이어 감지 로직 수행
         _enemy.DetectPlayer();
     }
+    #endregion
 
+    #region 비공개 메서드
     /// <summary>
     /// 적이 주변을 무작위로 둘러보는 코루틴입니다.
     /// </summary>
@@ -126,6 +160,7 @@ public class IdleState : IEnemyState
     /// <summary>
     /// 특정 위치를 관찰하고 환경을 조사합니다.
     /// </summary>
+    /// <param name="targetPosition">관찰할 목표 위치</param>
     private void InvestigateArea(Vector3 targetPosition)
     {
         // 플레이어 존재 여부 확인
@@ -154,4 +189,5 @@ public class IdleState : IEnemyState
             }
         }
     }
+    #endregion
 }
