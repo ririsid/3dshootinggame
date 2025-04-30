@@ -124,6 +124,74 @@ public class EnemyPatrol : MonoBehaviour
     }
     #endregion
 
+    #region 공개 메서드
+    /// <summary>
+    /// 순찰을 시작하거나 재개합니다. Enemy 스크립트에서 호출됩니다.
+    /// </summary>
+    /// <param name="agent">이동에 사용할 NavMeshAgent</param>
+    /// <param name="moveSpeed">순찰 시 사용할 이동 속도</param>
+    /// <param name="startPositionOverride">웨이포인트가 없을 경우 이동할 목표 지점 (보통 Enemy의 시작 위치)</param>
+    public void StartPatrol(NavMeshAgent agent, float moveSpeed, Vector3? startPositionOverride = null)
+    {
+        // 이미 순찰 중이면 중복 시작 방지
+        if (_isPatrolling) return;
+
+        // 에이전트 초기화
+        _navMeshAgent = agent;
+        _navMeshAgent.speed = moveSpeed;
+        _isPatrolling = true;
+
+        // 웨이포인트가 없는 경우 
+        if (!HasWaypoints)
+        {
+            if (!startPositionOverride.HasValue)
+            {
+                LogErrorAndStopPatrol("웨이포인트가 없고 startPositionOverride도 제공되지 않아 순찰을 시작할 수 없습니다.");
+                return;
+            }
+
+            _isSinglePointPatrol = true;
+            _targetPosition = startPositionOverride.Value;
+        }
+        else
+        {
+            // 웨이포인트 사용 설정
+            _isSinglePointPatrol = false;
+            _currentWaypointIndex = 0;
+            _targetPosition = _waypoints[_currentWaypointIndex].position;
+        }
+
+        // 목표 위치 유효성 검사 및 설정
+        if (!ValidateAndSetTargetPosition())
+        {
+            return; // 유효한 위치를 찾지 못함
+        }
+
+        // 목적지 설정 및 순찰 시작
+        if (!SetDestinationAndStartPatrol())
+        {
+            return; // 목적지 설정 실패
+        }
+    }
+
+    /// <summary>
+    /// 외부에서 순찰을 중지시킬 때 호출됩니다.
+    /// </summary>
+    public void StopPatrol()
+    {
+        StopPatrolInternal(); // 내부 중지 함수 호출
+    }
+
+    /// <summary>
+    /// 현재 순찰 목표 위치를 반환합니다.
+    /// </summary>
+    /// <returns>현재 목표 위치</returns>
+    public Vector3 GetCurrentTargetPosition()
+    {
+        return _targetPosition;
+    }
+    #endregion
+
     #region 비공개 메서드
     /// <summary>
     /// 내부적으로 순찰을 중지하고 상태를 정리하는 메서드.
@@ -143,141 +211,102 @@ public class EnemyPatrol : MonoBehaviour
             _navMeshAgent.ResetPath();
         }
     }
-    #endregion
 
-    #region 공개 메서드
     /// <summary>
-    /// 순찰을 시작하거나 재개합니다. Enemy 스크립트에서 호출됩니다.
+    /// 목표 위치의 유효성을 검사하고 필요시 대체 위치를 설정합니다.
     /// </summary>
-    /// <param name="agent">이동에 사용할 NavMeshAgent</param>
-    /// <param name="moveSpeed">순찰 시 사용할 이동 속도</param>
-    /// <param name="startPositionOverride">웨이포인트가 없을 경우 이동할 목표 지점 (보통 Enemy의 시작 위치)</param>
-    public void StartPatrol(NavMeshAgent agent, float moveSpeed, Vector3? startPositionOverride = null)
+    /// <returns>유효한 위치를 찾았는지 여부</returns>
+    private bool ValidateAndSetTargetPosition()
     {
-        // 이미 순찰 중이면 중복 시작 방지
-        if (_isPatrolling) return;
+        // NavMesh 상의 유효한 위치 확인
+        Vector3 validPosition = NavMeshUtility.GetNavMeshPosition(_targetPosition);
 
-        _navMeshAgent = agent;
-        _navMeshAgent.speed = moveSpeed;
-        _isPatrolling = true;
-
-        // 웨이포인트가 없는 경우
-        if (!HasWaypoints)
+        if (validPosition != _targetPosition)
         {
-            _isSinglePointPatrol = true;
-
-            // 시작 위치 오버라이드가 제공된 경우 해당 위치를 목표로 사용
-            if (startPositionOverride.HasValue)
+            if (Debug.isDebugBuild)
             {
-                _targetPosition = startPositionOverride.Value;
-
-                // NavMesh 상의 유효한 위치 확인
-                Vector3 validPosition = NavMeshUtility.GetNavMeshPosition(_targetPosition);
-                if (validPosition != _targetPosition)
-                {
-                    if (Debug.isDebugBuild)
-                    {
-                        Debug.LogWarning("제공된 시작 위치가 NavMesh 상에 없습니다. 가장 가까운 NavMesh 위치를 사용합니다.");
-                    }
-                    _targetPosition = validPosition;
-                }
-
-                // 목적지 설정
-                bool success = NavMeshUtility.TrySetDestination(_navMeshAgent, _targetPosition);
-                if (!success && Debug.isDebugBuild)
-                {
-                    Debug.LogWarning($"NavMeshAgent가 목적지({_targetPosition})로 경로를 찾을 수 없습니다.");
-                    return; // 순찰 시작 불가
-                }
+                Debug.Log($"목표 위치({_targetPosition})가 NavMesh 상에 존재하지 않습니다. 가장 가까운 NavMesh 위치로 조정합니다.");
             }
-            else
-            {
-                if (Debug.isDebugBuild)
-                {
-                    Debug.LogError("웨이포인트가 없고 startPositionOverride도 제공되지 않아 순찰을 시작할 수 없습니다.");
-                }
-                _isPatrolling = false;
-                return; // 순찰 시작 불가
-            }
+            _targetPosition = validPosition;
+            return true;
         }
-        else
+
+        // 웨이포인트가 있는 경우에만 다른 웨이포인트 시도
+        if (!_isSinglePointPatrol && HasWaypoints)
         {
-            // 첫 번째 웨이포인트 설정
-            _isSinglePointPatrol = false;
-            _currentWaypointIndex = 0;
-            _targetPosition = _waypoints[_currentWaypointIndex].position;
-
-            // NavMesh 상의 유효한 위치 확인
-            Vector3 validPosition = NavMeshUtility.GetNavMeshPosition(_targetPosition);
-            if (validPosition != _targetPosition)
-            {
-                if (Debug.isDebugBuild)
-                {
-                    Debug.LogWarning("웨이포인트가 NavMesh 상에 없습니다. 다음 웨이포인트로 시도합니다.");
-                }
-
-                // 다른 웨이포인트 시도
-                bool foundValid = false;
-                for (int i = 1; i < _waypoints.Length; i++)
-                {
-                    _currentWaypointIndex = i;
-                    _targetPosition = _waypoints[i].position;
-                    validPosition = NavMeshUtility.GetNavMeshPosition(_targetPosition);
-                    if (validPosition != _targetPosition)
-                    {
-                        foundValid = true;
-                        _targetPosition = validPosition;
-                        break;
-                    }
-                }
-
-                if (!foundValid)
-                {
-                    if (Debug.isDebugBuild)
-                    {
-                        Debug.LogError("유효한 웨이포인트를 찾을 수 없습니다. 순찰을 시작할 수 없습니다.");
-                    }
-                    _isPatrolling = false;
-                    return; // 순찰 시작 불가
-                }
-            }
-            else
+            if (TryFindValidWaypoint(out validPosition))
             {
                 _targetPosition = validPosition;
+                return true;
             }
-
-            // 목적지 설정
-            bool success = NavMeshUtility.TrySetDestination(_navMeshAgent, _targetPosition);
-            if (!success)
+            else
             {
-                if (Debug.isDebugBuild)
-                {
-                    Debug.LogWarning($"NavMeshAgent가 목적지({_targetPosition})로 경로를 찾을 수 없습니다.");
-                }
-                _isPatrolling = false;
-                return; // 순찰 시작 불가
+                LogErrorAndStopPatrol("NavMesh 상에 유효한 웨이포인트를 찾을 수 없습니다. 순찰을 시작할 수 없습니다.");
+                return false;
             }
         }
 
-        // 코루틴 시작
+        return true;
+    }
+
+    /// <summary>
+    /// 유효한 웨이포인트를 찾습니다.
+    /// </summary>
+    /// <param name="validPosition">찾은 유효한 위치가 저장됩니다.</param>
+    /// <returns>유효한 웨이포인트를 찾았는지 여부</returns>
+    private bool TryFindValidWaypoint(out Vector3 validPosition)
+    {
+        validPosition = Vector3.zero;
+
+        for (int i = 1; i < _waypoints.Length; i++)
+        {
+            _currentWaypointIndex = i;
+            Vector3 waypointPosition = _waypoints[i].position;
+            Vector3 navMeshPosition = NavMeshUtility.GetNavMeshPosition(waypointPosition);
+
+            if (navMeshPosition != waypointPosition)
+            {
+                validPosition = navMeshPosition;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 목적지를 설정하고 순찰 코루틴을 시작합니다.
+    /// </summary>
+    /// <returns>목적지 설정 성공 여부</returns>
+    private bool SetDestinationAndStartPatrol()
+    {
+        bool success = NavMeshUtility.TrySetDestination(_navMeshAgent, _targetPosition);
+
+        if (!success)
+        {
+            if (Debug.isDebugBuild)
+            {
+                Debug.LogWarning($"NavMeshAgent가 목적지({_targetPosition})로 경로를 찾을 수 없습니다.");
+            }
+            _isPatrolling = false;
+            return false;
+        }
+
         _patrolCoroutine = StartCoroutine(PatrolCoroutine());
+        return true;
     }
 
     /// <summary>
-    /// 외부에서 순찰을 중지시킬 때 호출됩니다.
+    /// 에러 메시지를 로그하고 순찰을 중지합니다.
     /// </summary>
-    public void StopPatrol()
+    /// <param name="errorMessage">에러 메시지</param>
+    private void LogErrorAndStopPatrol(string errorMessage)
     {
-        StopPatrolInternal(); // 내부 중지 함수 호출
-    }
-
-    /// <summary>
-    /// 현재 순찰 목표 위치를 반환합니다.
-    /// </summary>
-    /// <returns>현재 목표 위치</returns>
-    public Vector3 GetCurrentTargetPosition()
-    {
-        return _targetPosition;
+        if (Debug.isDebugBuild)
+        {
+            Debug.LogError(errorMessage);
+        }
+        _isPatrolling = false;
     }
     #endregion
 
