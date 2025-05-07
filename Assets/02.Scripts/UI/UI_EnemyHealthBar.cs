@@ -202,6 +202,7 @@ public class UI_EnemyHealthBar : MonoBehaviour
     /// <param name="maxHealth">최대 체력</param>
     private void UpdateHealthBar(float currentHealth, float maxHealth)
     {
+        Debug.Log($"UI_EnemyHealthBar: 체력 업데이트 - 현재 체력: {currentHealth}, 최대 체력: {maxHealth}");
         if (_healthBar != null)
         {
             _healthBar.CurrentHealth = currentHealth;
